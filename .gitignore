@@ -2,3 +2,5 @@
 /build
 *.n64
 *.z64
+/output
+tools/sc64/sc64.exe
