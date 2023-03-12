@@ -20,7 +20,7 @@ static void init (void) {
 
 static void deinit (void) {
     flashcart_deinit();
-    rdp_close();
+    rdpq_close();
     rspq_close();
     audio_close();
     display_close();
