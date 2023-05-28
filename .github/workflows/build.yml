@@ -13,9 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: Dockerfile
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.github_token }}
+      # credentials:
+      #   username: ${{ github.actor }}
+      #   password: ${{ secrets.github_token }}
       volumes:
         - my_docker_volume:/volume_mount
 
