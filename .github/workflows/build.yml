@@ -12,7 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/n64-tools/gcc-toolchain-mips64:latest # we use an unofficial container for the moment as git-submodules dont work in the official one!
+      image: Dockerfile
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.github_token }}
@@ -29,17 +29,17 @@ jobs:
           submodules: true
           fetch-depth: 1 # we only require the last check-in, unless we want to create a changelog.
 
-      - name: Build libdragon
-        run: |
-          cd ./libdragon
-          # FIXME: this currently also builds the examples which adds to the build time.
-          # ./build.sh
-          # WORKAROUND: for CI
-          make -j libdragon
-          make install
-          make -j tools
-          make tools-install
-          make install-mk
+      # - name: Build libdragon
+      #   run: |
+      #     cd ./libdragon
+      #     # FIXME: this currently also builds the examples which adds to the build time.
+      #     # ./build.sh
+      #     # WORKAROUND: for CI
+      #     make -j libdragon
+      #     make install
+      #     make -j tools
+      #     make tools-install
+      #     make install-mk
 
       - name: Build N64FlashcartMenu ROM
         run: |
