@@ -6,7 +6,7 @@
     "mounts": [
         "source=n64flashcartmenu-bashhistory,target=/commandhistory,type=volume"
     ],
-    "postCreateCommand": "cd ./libdragon && make install tools-install",
+    "postCreateCommand": "cd ./libdragon && ./build.sh",
     "customizations": {
         "vscode": {
             "extensions": [
