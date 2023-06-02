@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include <libdragon.h>
+#include <rdpq.h>
 #include <rspq.h>
 #include <usb.h>
 
