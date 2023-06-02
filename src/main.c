@@ -1,8 +1,6 @@
 #include <stdio.h>
 
 #include <libdragon.h>
-#include <rdpq.h>
-#include <rspq.h>
 #include <usb.h>
 
 #include "boot/boot.h"
@@ -23,7 +21,7 @@ static void init (void) {
 
 static void deinit (void) {
     flashcart_deinit();
-    rdpq_close();
+    rdp_close();
     rspq_close();
     audio_close();
     display_close();
