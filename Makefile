@@ -49,8 +49,12 @@ clean:
 .PHONY: clean
 
 # run:
-# 	$(shell sc64deployer --boot direct-rom %~dp0$(OUTPUT_DIR))\$(PROJECT_NAME).z64)
+#   $(shell remotedeploy -d)
+#   FIXME: improve ability to deploy.
+#   if devcontainer, use remotedeploy.sh, else
+# 	  $(shell sc64deployer --boot direct-rom %~dp0$(OUTPUT_DIR))\$(PROJECT_NAME).z64)
 
 # test:
+#   TODO: run tests
 
 -include $(wildcard $(BUILD_DIR)/*.d)
