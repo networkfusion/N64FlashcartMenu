@@ -15,6 +15,7 @@
 Download the `sc64menu.n64` ROM from the latest action run assets.
 Add it to the root folder on your SD card.
 
+(Optional):
 Create a file called `config.sc64.toml.txt`
 Add the following content, replacing the comments.
 ```
@@ -69,17 +70,17 @@ See: https://github.com/Polprzewodnikowy/SummerCart64/blob/v2.15.1/docs/00_quick
 
 
 
-### For the devcontainer
+### From the devcontainer
 It is not currently possible to directly communicate with USB devices.
 BUT, as a work around you can use a proxy TCP/IP connection
-Set up a proxy: `./sc64deployer.exe server`
+Set up a proxy: open a terminal window, `cd ./tools/sc64` and then `./sc64deployer.exe server`
 
 Then in the dev container, use `remotedeploy.sh`
 
 
 ### From your host (Windows) OS
 
-* Run `./deploy.bat` from the terminal
+* Run `./localdeploy.bat` from the terminal
 
 
 Toggle the N64 power switch to load the ROM.
