@@ -30,7 +30,15 @@ flashcart_error_t flashcart_init (void) {
         case CART_SC64:
             flashcart = sc64_get_flashcart();
             break;
-
+        // case CART_EVERDRIVE:
+        //     flashcart = ed64_get_flashcart();
+        //     break;
+        // case CART_64DRIVE:
+        //     flashcart = 64drive_get_flashcart();
+        //     break;
+        // case CART_NONE:
+        //     flashcart = none_get_flashcart();
+        //     break;
         default:
             return FLASHCART_ERROR_UNSUPPORTED;
     }
