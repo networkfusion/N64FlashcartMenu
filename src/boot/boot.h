@@ -41,6 +41,7 @@ typedef struct {
     boot_tv_type_t tv_type;
     uint8_t cic_seed;
     bool detect_cic_seed;
+    bool pseudo_boot; /* boot using fake CIC or loading GameShark / Action Replay cheats. */
 } boot_params_t;
 
 
