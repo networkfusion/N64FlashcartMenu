@@ -25,18 +25,18 @@ void pseudo_boot(uint32_t cart_cic, uint8_t pseudo_cic, uint32_t *cheat_lists[2]
 
     if (datel_cheats_enabled) {
         // Copy patcher into a memory location where it will not be overwritten
-        void *patcher = (void*)0x80700000; // Temporary patcher location
-        uint32_t patcher_length = &&patcher_end - &&patcher_start;
-        memcpy(patcher, &&patcher_start, patcher_length);
+        void *patcher = (void*)0x80700000; // Temporary patcher location (within Expansion PAK region)
+        uint32_t datel_patcher_length = &&datel_patcher_end - &&datel_patcher_start;
+        memcpy(patcher, &&datel_patcher_start, datel_patcher_length);
 
         // Copy code lists into memory, behind the patcher
-        uint32_t *p = patcher + patcher_length;
+        uint32_t *p = patcher + datel_patcher_length;
         *(uint32_t**)0xA06FFFFC = p; // Save temporary code list location
         for (int i = 0; i < 2; i++) {
             int j = -2;
             do {
                 j += 2;
-                patcher_length += 8;
+                datel_patcher_length += 8;
 
                 *p++ = cheat_lists[i][j];
                 *p++ = cheat_lists[i][j + 1];
@@ -44,11 +44,11 @@ void pseudo_boot(uint32_t cart_cic, uint8_t pseudo_cic, uint32_t *cheat_lists[2]
         }
 
         // Write cache to physical memory and invalidate
-        data_cache_hit_writeback(patcher, patcher_length);
-        inst_cache_hit_invalidate(patcher, patcher_length);
+        data_cache_hit_writeback(patcher, datel_patcher_length);
+        inst_cache_hit_invalidate(patcher, datel_patcher_length);
     }
 
-    // Start game via CIC boot code
+    // Start ROM via CIC boot code
     asm __volatile__ (
         ".set noreorder;"
 
@@ -89,7 +89,7 @@ void pseudo_boot(uint32_t cart_cic, uint8_t pseudo_cic, uint32_t *cheat_lists[2]
         "bnez   $a2, 1b;"
         "addiu  $a0, $a0, 4;"
 
-        // Boot with or without cheats enabled?
+        // Boot with or without datel cheats enabled?
         "beqz   %1, 2f;"
 
         // Patch CIC boot code
@@ -160,8 +160,8 @@ void pseudo_boot(uint32_t cart_cic, uint8_t pseudo_cic, uint32_t *cheat_lists[2]
           "$11", "$19", "$20", "$21",
           "$22", "$23", "memory"
     );
-
-patcher_start:
+// Start ROM with datel cheats
+datel_patcher_start:
     asm __volatile__ (
         ".set noat;"
         ".set noreorder;"
@@ -423,7 +423,7 @@ patcher_start:
         :                               // inputs
         : "memory"                      // clobber
     );
-patcher_end:
+datel_patcher_end:
 
     return;
 }
