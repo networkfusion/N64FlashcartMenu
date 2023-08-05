@@ -100,3 +100,10 @@ jobs:
 #       if: github.event_name == 'release' && github.event.action == 'created'
 #       run: |
 #         echo "still release preview. Check actions for build assets."
+
+  Run-Rom-Tests:
+    name: "Run ROM smoke tests"
+    needs: build-menu
+    uses: ./.github/workflows/smoke-tests.yml
+    secrets:
+      token: ${{ secrets.GITHUB_TOKEN }}
