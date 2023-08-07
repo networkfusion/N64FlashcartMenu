@@ -54,7 +54,11 @@ jobs:
       - name: Setup Ares
         if: ${{ matrix.ares-ci-compatible }}
         run: |
-          . ares-${{ env.Ares_version }}/ares --dump-all-settings
+          # . ares-${{ env.Ares_version }}/ares --dump-all-settings
+          . ares-${{ env.Ares_version }}/ares --setting Video/Driver='Direct3D 9.0'
+          . ares-${{ env.Ares_version }}/ares --setting Video/DisableVideoInterfaceProcessing=true
+          . ares-${{ env.Ares_version }}/ares --setting Audio/Driver='None'
+          # 
           # # NOTE: we need to change some of the settings that cannot be setup through the CLI.
           # # to make it compatible with the CI host.
           # # FIXME: ares should have a parameter to tell it that it is running on a github host
