@@ -24,7 +24,7 @@ jobs:
     env:
       Delay_Time_Seconds: 15
       Enable_Screenshot: 'yes' # 'no' by default.
-      Ares_version: v131 # NOTE: this script is currently broken on Ares v132 and later. In future, possibily best to target latest or nightly.
+      Ares_version: v133 # NOTE: this script is currently broken on Ares v132 and later. In future, possibily best to target latest or nightly.
 
     steps:
 
@@ -46,35 +46,35 @@ jobs:
         if: ${{ matrix.ares-ci-compatible }}
         run: |
           Write-Output "Installing ares emulator!" # NOTE, windows zip name is different on Ares v133 (and later) - remove `-msvc-x64`
-          curl -LO https://github.com/ares-emulator/ares/releases/download/${{ env.Ares_version }}/ares-windows-msvc-x64.zip
-          unzip ares-windows-msvc-x64.zip
-          rd -r ./ares-windows-msvc-x64.zip
+          curl -LO https://github.com/ares-emulator/ares/releases/download/${{ env.Ares_version }}/ares-windows.zip
+          unzip ares-windows.zip
+          rd -r ./ares-windows.zip
         continue-on-error: true
-
 
       - name: Setup Ares
         if: ${{ matrix.ares-ci-compatible }}
         run: |
-          # NOTE: we need to change some of the settings that cannot be setup through the CLI.
-          # to make it compatible with the CI host.
-          # FIXME: ares should have a parameter to tell it that it is running on a github host
-          Write-Output "Step 1 - Run a valid ROM so the settings are actually generated."
-          Write-Output "         ROM will fail to run due to missing graphics acceleration..."
-          . ares-${{ env.Ares_version }}/ares ${{ runner.temp }}/roms/${{ matrix.rom-path }}/${{ matrix.rom-name }}.n64
-          Write-Output "Step 2 - Sleep a little to make sure settings.bml is generated."
-          # 5 seconds delay seems to run reliably.
-          Start-Sleep -Seconds 5
-          Write-Output "Step 3 - adjust the settings to disable graphics acceleration and audio"
-          Write-Verbose "Disable graphics acceleration"
-          ((Get-Content -path ares-${{ env.Ares_version }}/settings.bml -Raw) -replace 'EnableVulkan: true','EnableVulkan: false') | Set-Content -Path ares-${{ env.Ares_version }}/settings.bml
-          Write-Verbose "Disable video interface processing"
-          ((Get-Content -path ares-${{ env.Ares_version }}/settings.bml -Raw) -replace 'DisableVideoInterfaceProcessing: false','DisableVideoInterfaceProcessing: true') | Set-Content -Path ares-${{ env.Ares_version }}/settings.bml
-          Write-Verbose "Change to a compatible graphics option"
-          # https://github.com/ares-emulator/ares/blob/b1d216b8affbfb811a681dca1bd603d3369624fc/ruby/video/video.cpp#L154
-          ((Get-Content -path ares-${{ env.Ares_version }}/settings.bml -Raw) -replace 'Driver: OpenGL 3.2','Driver: Direct3D 9.0') | Set-Content -Path ares-${{ env.Ares_version }}/settings.bml
-          Write-Verbose "Disable audio"
-          # https://github.com/ares-emulator/ares/blob/3ca1f9ebb4ae3f472f7fba661746058f84126536/ruby/audio/audio.cpp#L268
-          ((Get-Content -path ares-${{ env.Ares_version }}/settings.bml -Raw) -replace 'Driver: WASAPI','Driver: None') | Set-Content -Path ares-${{ env.Ares_version }}/settings.bml
+          . ares-${{ env.Ares_version }}/ares --dump-all-settings
+          # # NOTE: we need to change some of the settings that cannot be setup through the CLI.
+          # # to make it compatible with the CI host.
+          # # FIXME: ares should have a parameter to tell it that it is running on a github host
+          # Write-Output "Step 1 - Run a valid ROM so the settings are actually generated."
+          # Write-Output "         ROM will fail to run due to missing graphics acceleration..."
+          # . ares-${{ env.Ares_version }}/ares ${{ runner.temp }}/roms/${{ matrix.rom-path }}/${{ matrix.rom-name }}.n64
+          # Write-Output "Step 2 - Sleep a little to make sure settings.bml is generated."
+          # # 5 seconds delay seems to run reliably.
+          # Start-Sleep -Seconds 5
+          # Write-Output "Step 3 - adjust the settings to disable graphics acceleration and audio"
+          # Write-Verbose "Disable graphics acceleration"
+          # ((Get-Content -path ares-${{ env.Ares_version }}/settings.bml -Raw) -replace 'EnableVulkan: true','EnableVulkan: false') | Set-Content -Path ares-${{ env.Ares_version }}/settings.bml
+          # Write-Verbose "Disable video interface processing"
+          # ((Get-Content -path ares-${{ env.Ares_version }}/settings.bml -Raw) -replace 'DisableVideoInterfaceProcessing: false','DisableVideoInterfaceProcessing: true') | Set-Content -Path ares-${{ env.Ares_version }}/settings.bml
+          # Write-Verbose "Change to a compatible graphics option"
+          # # https://github.com/ares-emulator/ares/blob/b1d216b8affbfb811a681dca1bd603d3369624fc/ruby/video/video.cpp#L154
+          # ((Get-Content -path ares-${{ env.Ares_version }}/settings.bml -Raw) -replace 'Driver: OpenGL 3.2','Driver: Direct3D 9.0') | Set-Content -Path ares-${{ env.Ares_version }}/settings.bml
+          # Write-Verbose "Disable audio"
+          # # https://github.com/ares-emulator/ares/blob/3ca1f9ebb4ae3f472f7fba661746058f84126536/ruby/audio/audio.cpp#L268
+          # ((Get-Content -path ares-${{ env.Ares_version }}/settings.bml -Raw) -replace 'Driver: WASAPI','Driver: None') | Set-Content -Path ares-${{ env.Ares_version }}/settings.bml
 
       - name: Run ROM in Ares for logs
         if: ${{ matrix.ares-ci-compatible }}
@@ -111,7 +111,6 @@ jobs:
           path: |
             ${{ matrix.rom-name }}-${{ env.Delay_Time_Seconds }}s-ares-output-log.txt
         continue-on-error: true
-
 
       - name: Run ROM in Ares for screenshot
         if: ${{ env.Enable_Screenshot == 'yes' }} && ${{ matrix.ares-ci-compatible }}
