@@ -24,7 +24,22 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build N64FlashcartMenu ROM
+      - name: Cache libDragon build
+        id: cache-libdragon
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-libdragon
+        with:
+          # libdragon cache files are stored in `~/libdragon`
+          path: ~/libdragon
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/.gitmodules') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+
+      - name: Build libDragon
+        if: ${{ steps.cache-libdragon.outputs.cache-hit != 'true' }}
         uses: devcontainers/ci@v0.3
         with:
           imageName: ghcr.io/polprzewodnikowy/n64flashcartmenu-devcontainer
@@ -35,6 +50,15 @@ jobs:
             pushd libdragon
             ./build.sh
             popd
+
+      - name: Build N64FlashcartMenu ROM
+        uses: devcontainers/ci@v0.3
+        with:
+          imageName: ghcr.io/polprzewodnikowy/n64flashcartmenu-devcontainer
+          cacheFrom: ghcr.io/polprzewodnikowy/n64flashcartmenu-devcontainer
+          push: ${{ github.repository_owner == 'Polprzewodnikowy' && 'filter' || 'never' }}
+          refFilterForPush: refs/heads/main
+          runCmd: |
             make all -j
         env:
           FLAGS: -DMENU_RELEASE
