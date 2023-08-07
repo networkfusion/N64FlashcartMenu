@@ -30,9 +30,9 @@ jobs:
         env:
           cache-name: cache-libdragon
         with:
-          # libdragon cache files are stored in `~/libdragon`
-          path: ~/libdragon
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/.gitmodules') }}
+          # libdragon cache files are stored in `./libdragon`
+          path: ./libdragon
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('../.gitmodules') }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}-
             ${{ runner.os }}-build-
