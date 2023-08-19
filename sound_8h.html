@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.5"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>N64FlashcartMenu: menu.h Source File</title>
+<title>N64FlashcartMenu: sound.h File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -73,24 +73,42 @@ $(function() {
 </div>
 </div><!-- top -->
 <div class="header">
-  <div class="headertitle"><div class="title">menu.h</div></div>
+  <div class="summary">
+<a href="#define-members">Macros</a> &#124;
+<a href="#func-members">Functions</a>  </div>
+  <div class="headertitle"><div class="title">sound.h File Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<a href="menu_8h.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span> </div>
-<div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="preprocessor">#ifndef MENU_H__</span></div>
-<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="preprocessor">#define MENU_H__</span></div>
-<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span> </div>
-<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span> </div>
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &quot;<a class="code" href="boot_8h.html">boot/boot.h</a>&quot;</span></div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span> </div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="keywordtype">void</span> menu_run (<a class="code hl_struct" href="boot_8h.html#structboot__params__t">boot_params_t</a> *boot_params);</div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span> </div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span> </div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#endif</span></div>
-<div class="ttc" id="aboot_8h_html"><div class="ttname"><a href="boot_8h.html">boot.h</a></div><div class="ttdoc">Flashcart Boot Subsystem.</div></div>
-<div class="ttc" id="aboot_8h_html_structboot__params__t"><div class="ttname"><a href="boot_8h.html#structboot__params__t">boot_params_t</a></div><div class="ttdoc">Boot Parameters Structure.</div><div class="ttdef"><b>Definition:</b> boot.h:36</div></div>
-</div><!-- fragment --></div><!-- contents -->
+
+<p>Menu Sound.  
+<a href="#details">More...</a></p>
+
+<p><a href="sound_8h_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="define-members" name="define-members"></a>
+Macros</h2></td></tr>
+<tr class="memitem:ab67be06d848428483d4b2712c45885c8"><td class="memItemLeft" align="right" valign="top"><a id="ab67be06d848428483d4b2712c45885c8" name="ab67be06d848428483d4b2712c45885c8"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>SOUND_MP3_PLAYER_CHANNEL</b>&#160;&#160;&#160;(0)</td></tr>
+<tr class="separator:ab67be06d848428483d4b2712c45885c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:a07821cfe30ceff25ea3ced58e082c338"><td class="memItemLeft" align="right" valign="top"><a id="a07821cfe30ceff25ea3ced58e082c338" name="a07821cfe30ceff25ea3ced58e082c338"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>sound_init_default</b> (void)</td></tr>
+<tr class="separator:a07821cfe30ceff25ea3ced58e082c338"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aab8b9e403b653c8c710e13b208a15079"><td class="memItemLeft" align="right" valign="top"><a id="aab8b9e403b653c8c710e13b208a15079" name="aab8b9e403b653c8c710e13b208a15079"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>sound_init_mp3_playback</b> (void)</td></tr>
+<tr class="separator:aab8b9e403b653c8c710e13b208a15079"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7ae7bee1ef1dc3362f68f2b5eb7a1259"><td class="memItemLeft" align="right" valign="top"><a id="a7ae7bee1ef1dc3362f68f2b5eb7a1259" name="a7ae7bee1ef1dc3362f68f2b5eb7a1259"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>sound_poll</b> (void)</td></tr>
+<tr class="separator:a7ae7bee1ef1dc3362f68f2b5eb7a1259"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aadd34093df6b4e137dfe5e1fe1a0f39c"><td class="memItemLeft" align="right" valign="top"><a id="aadd34093df6b4e137dfe5e1fe1a0f39c" name="aadd34093df6b4e137dfe5e1fe1a0f39c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>sound_close</b> (void)</td></tr>
+<tr class="separator:aadd34093df6b4e137dfe5e1fe1a0f39c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p >Menu Sound. </p>
+</div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
 Generated on Sat Aug 19 2023 14:08:09 for N64FlashcartMenu by&#160;<a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.5
