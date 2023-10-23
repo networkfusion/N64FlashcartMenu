@@ -39,7 +39,7 @@ static flashcart_err_t ed64_init (void) {
         uint8_t cartsave_data[KiB(128)];
 
         // find the path to last save
-        if (file_exists(strip_sd_prefix(current_state.last_save_path))) {
+        if (file_exists(strip_sd_prefix(current_state.last_save_path)) && current_state.is_save_type != SAVE_TYPE_NONE) {
 
             int save_size = file_get_size(current_state.last_save_path);
 
@@ -49,13 +49,13 @@ static flashcart_err_t ed64_init (void) {
 
             // everdrive doesn't care about the save type other than flash sram and eeprom
             // so minus flashram we can just check the size
-            if (current_state.is_save_type == SAVE_TYPE_FLASHRAM) { // flashram is bugged atm
+            if (current_state.is_save_type == SAVE_TYPE_FLASHRAM) {
                ed64_ll_get_fram(cartsave_data, save_size);
             }
             else if (save_size > KiB(2)) { // sram
                ed64_ll_get_sram(cartsave_data, save_size);
             }
-            else { // eeprom
+            else if (current_state.is_save_type == SAVE_TYPE_EEPROM_16K || current_state.is_save_type == SAVE_TYPE_EEPROM_4K) {
                ed64_ll_get_eeprom(cartsave_data, save_size);
             }
 
