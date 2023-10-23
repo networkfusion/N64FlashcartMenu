@@ -33,11 +33,7 @@ static flashcart_err_t ed64_init (void) {
 
     if (current_state.is_expecting_save_writeback == true) {
 
-        // make sure next boot doesnt trigger the check changing its state.
-        current_state.is_expecting_save_writeback = false;
-        ed64_state_save(&current_state);
-
-        // Now save the content back to the SD card!
+        // save the content back to the SD card!
         FIL fil;
         UINT bw;
         uint8_t cartsave_data[KiB(128)];
@@ -53,11 +49,8 @@ static flashcart_err_t ed64_init (void) {
 
             // everdrive doesn't care about the save type other than flash sram and eeprom
             // so minus flashram we can just check the size
-            if (current_state.is_fram_save_type == true) { // flashram is bugged atm
+            if (current_state.is_save_type == SAVE_TYPE_FLASHRAM) { // flashram is bugged atm
                ed64_ll_get_fram(cartsave_data, save_size);
-              // deletes flag
-              current_state.is_fram_save_type = false;
-              ed64_state_save(&current_state);
             }
             else if (save_size > KiB(32)) { // sram 128
                ed64_ll_get_sram(cartsave_data, save_size);
@@ -77,12 +70,12 @@ static flashcart_err_t ed64_init (void) {
                 return FLASHCART_ERR_LOAD;
             }
         }
-        else {
-            current_state.is_expecting_save_writeback = false;
-            current_state.is_fram_save_type = false;
-            current_state.last_save_path = "";
-            ed64_state_save(&current_state);
-        }
+
+        // make sure next boot doesnt trigger the check changing its state.
+        current_state.is_expecting_save_writeback = false;
+        current_state.is_save_type = SAVE_TYPE_NONE;
+        current_state.last_save_path = "";
+        ed64_state_save(&current_state);
     }
     return FLASHCART_OK;
 }
@@ -216,10 +209,10 @@ static flashcart_err_t ed64_load_save (char *save_path) {
         return FLASHCART_ERR_LOAD;
     }
 
-    size_t save_size = file_get_size(strip_sd_prefix(save_path));
-    uint8_t cartsave_data[save_size];
+    size_t save_file_size = file_get_size(strip_sd_prefix(save_path));
+    uint8_t cartsave_data[save_file_size];
 
-    if (f_read(&fil, cartsave_data, save_size, &br) != FR_OK) {
+    if (f_read(&fil, cartsave_data, save_file_size, &br) != FR_OK) {
         f_close(&fil);
         return FLASHCART_ERR_LOAD;
     }
@@ -228,25 +221,21 @@ static flashcart_err_t ed64_load_save (char *save_path) {
         return FLASHCART_ERR_LOAD;
     }
 
-    current_state.is_fram_save_type = false;
+    current_state.is_save_type = SAVE_TYPE_NONE;
 
     ed64_save_type_t type = ed64_ll_get_save_type();
     switch (type) {
         case SAVE_TYPE_EEPROM_4K:
         case SAVE_TYPE_EEPROM_16K:
-            ed64_ll_set_eeprom(cartsave_data, save_size);
+            ed64_ll_set_eeprom(cartsave_data, save_file_size);
             break;
         case SAVE_TYPE_SRAM:
-            ed64_ll_set_sram(cartsave_data, save_size);
+            ed64_ll_set_sram(cartsave_data, save_file_size);
         case SAVE_TYPE_SRAM_128K:
             ed64_ll_set_sram_128(cartsave_data, KiB(128));
             break;
         case SAVE_TYPE_FLASHRAM:
             ed64_ll_set_fram(cartsave_data, KiB(128));
-            // a cold and warm boot has no way of seeing save types and most types can be determined by size
-            // this tells the cart to use flash instead of sram 128 since they are the same size
-            current_state.is_fram_save_type = true;
-            ed64_state_save(&current_state);
             break;
         case SAVE_TYPE_DD64_CART_PORT:
             break;
@@ -254,7 +243,7 @@ static flashcart_err_t ed64_load_save (char *save_path) {
             break;
     }
 
-
+    //current_state.is_save_type = type; // SHOULD HAVE BEEN SET FROM ed64_set_save_type()
     current_state.last_save_path = save_path;
     current_state.is_expecting_save_writeback = true;
     ed64_state_save(&current_state);
@@ -291,6 +280,9 @@ static flashcart_err_t ed64_set_save_type (flashcart_save_type_t save_type) {
     }
 
     ed64_ll_set_save_type(type);
+
+    current_state.is_save_type = type;
+    ed64_state_save(&current_state);
 
     return FLASHCART_OK;
 }
