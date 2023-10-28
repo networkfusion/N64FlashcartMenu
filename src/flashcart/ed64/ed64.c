@@ -14,6 +14,9 @@
 #include "ed64.h"
 #include "ed64_state.h"
 
+
+// static ed64_device_variant_t device_variant = DEVICE_VARIANT_UNKNOWN;
+
 /**
  * The ED64's current state
  */
@@ -207,7 +210,7 @@ static flashcart_err_t ed64_load_file (char *file_path, uint32_t rom_offset, uin
     return FLASHCART_OK;
 }
 
-static flashcart_err_t ed64_load_save (char *save_path) {
+static flashcart_err_t ed64_load_save (char *save_path) { // from file
     
     FIL fil;
     UINT br;
@@ -229,9 +232,7 @@ static flashcart_err_t ed64_load_save (char *save_path) {
         return FLASHCART_ERR_LOAD;
     }
 
-    current_state.is_save_type = SAVE_TYPE_NONE;
-
-    ed64_save_type_t type = ed64_ll_get_save_type();
+    ed64_save_type_t type = ed64_ll_get_save_type(); // current_state.is_save_type;
     switch (type) {
         case SAVE_TYPE_EEPROM_4K:
         case SAVE_TYPE_EEPROM_16K:
@@ -251,7 +252,7 @@ static flashcart_err_t ed64_load_save (char *save_path) {
             break;
     }
 
-    //current_state.is_save_type = type; // SHOULD HAVE BEEN SET FROM ed64_set_save_type()
+    current_state.is_save_type = type; // SHOULD HAVE BEEN SET FROM ed64_set_save_type()
     current_state.last_save_path = save_path;
     current_state.is_expecting_save_writeback = true;
     ed64_state_save(&current_state);
