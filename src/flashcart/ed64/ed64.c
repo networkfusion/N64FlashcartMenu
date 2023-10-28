@@ -33,6 +33,8 @@ static flashcart_err_t ed64_init (void) {
 
     ed64_state_load(&current_state);
 
+    // FIXME: should be checking whether the console was a hot restart here!
+    // Cold restarts are only available with battery backup.
     if (current_state.is_expecting_save_writeback == true) {
 
         // save the content back to the SD card!
@@ -117,7 +119,7 @@ static flashcart_err_t ed64_load_rom (char *rom_path, flashcart_progress_callbac
 
     // FIXME: if the cart is not V3 or X5 or X7, we need probably need to - 128KiB for save compatibility.
     // Or somehow warn that certain ROM's will have corruption due to the address space being used for saves.
-    // Conker's Bad Fur Day doesn't have this issue because eeprom data is at a fixed address in pif ram.
+    // EEPROM saves should be unaffected.
     if (rom_size > MiB(64)) {
         f_close(&fil);
         return FLASHCART_ERR_LOAD;
@@ -180,6 +182,7 @@ static flashcart_err_t ed64_load_file (char *file_path, uint32_t rom_offset, uin
 
     // FIXME: if the cart is not V3 or X5 or X7, we need probably need to - 128KiB for save compatibility.
     // Or somehow warn that certain ROM's will have corruption due to the address space being used for saves.
+    // EEPROM saves should be unaffected.
 
     if (file_size > (MiB(64) - rom_offset)) {
         f_close(&fil);
