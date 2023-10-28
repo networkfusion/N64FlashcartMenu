@@ -52,7 +52,7 @@ static flashcart_err_t ed64_init (void) {
             if (current_state.is_save_type == SAVE_TYPE_FLASHRAM) {
                ed64_ll_get_fram(cartsave_data, save_size);
             }
-            else if (save_size > KiB(2)) { // sram
+            else if (current_state.is_save_type == SAVE_TYPE_SRAM_128K || current_state.is_save_type == SAVE_TYPE_SRAM) {
                ed64_ll_get_sram(cartsave_data, save_size);
             }
             else if (current_state.is_save_type == SAVE_TYPE_EEPROM_16K || current_state.is_save_type == SAVE_TYPE_EEPROM_4K) {
