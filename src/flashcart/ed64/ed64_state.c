@@ -1,5 +1,4 @@
 #include <libdragon.h>
-#include <mini.c/src/mini.h>
 
 #include "ed64_state.h"
 #include "utils/fs.h"

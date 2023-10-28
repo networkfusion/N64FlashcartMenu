@@ -43,6 +43,9 @@
 #define	PHYS_TO_K1(x)	((unsigned long)(x)|0xA0000000)	/* physical to kseg1 */
 #define	K1_TO_PHYS(x)	((unsigned long)(x)&0x1FFFFFFF)	/* kseg1 to physical */
 
+#define	ED_IO_READ(addr)		(*(volatile unsigned long*)PHYS_TO_K1(addr))
+#define	ED_IO_WRITE(addr,data)	(*(volatile unsigned long*)PHYS_TO_K1(addr)=(unsigned long)(data))
+
 
 
 /**
