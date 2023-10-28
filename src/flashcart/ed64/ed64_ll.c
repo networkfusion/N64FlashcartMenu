@@ -25,6 +25,8 @@ typedef enum {
 
 } ed64_registers_t;
 
+// #define DEVICE_VARIANT_MASK         (0xF000)
+
 void pi_initialize (void);
 void pi_initialize_sram (void);
 void pi_dma_from_cart (void* dest, void* src, unsigned long size);
