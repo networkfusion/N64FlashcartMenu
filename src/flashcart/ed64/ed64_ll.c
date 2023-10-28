@@ -26,7 +26,7 @@ typedef enum {
 } ed64_registers_t;
 
 void pi_initialize (void);
-void pi_pi_dma_wait (void);
+void pi_dma_wait (void);
 void pi_initialize_sram (void);
 void pi_dma_from_cart (void* dest, void* src, unsigned long size);
 void pi_dma_to_cart (void* dest, void* src, unsigned long size);
