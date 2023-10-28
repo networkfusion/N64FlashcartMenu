@@ -14,7 +14,9 @@
 #include "ed64.h"
 #include "ed64_state.h"
 
-
+/**
+ * The ED64's current state
+ */
 static ed64_pseudo_writeback_t current_state;
 
 extern int ed_exit (void);
@@ -47,16 +49,22 @@ static flashcart_err_t ed64_init (void) {
                 return FLASHCART_ERR_LOAD;
             }
 
-            // everdrive doesn't care about the save type other than flash sram and eeprom
-            // so minus flashram we can just check the size
-            if (current_state.is_save_type == SAVE_TYPE_FLASHRAM) {
-               ed64_ll_get_fram(cartsave_data, save_size);
-            }
-            else if (current_state.is_save_type == SAVE_TYPE_SRAM_128K || current_state.is_save_type == SAVE_TYPE_SRAM) {
-               ed64_ll_get_sram(cartsave_data, save_size);
-            }
-            else if (current_state.is_save_type == SAVE_TYPE_EEPROM_16K || current_state.is_save_type == SAVE_TYPE_EEPROM_4K) {
-               ed64_ll_get_eeprom(cartsave_data, save_size);
+            switch (current_state.is_save_type) {
+                case SAVE_TYPE_EEPROM_4K:
+                case SAVE_TYPE_EEPROM_16K:
+                    ed64_ll_get_eeprom(cartsave_data, save_size);
+                    break;
+                case SAVE_TYPE_SRAM:
+                case SAVE_TYPE_SRAM_128K:
+                    ed64_ll_get_sram(cartsave_data, save_size);
+                    break;
+                case SAVE_TYPE_FLASHRAM:
+                    ed64_ll_get_fram(cartsave_data, save_size);
+                    break;
+                case SAVE_TYPE_DD64_CART_PORT:
+                    break;
+                default:
+                    break;
             }
 
             if (f_write(&fil, cartsave_data, save_size, &bw) != FR_OK) {
