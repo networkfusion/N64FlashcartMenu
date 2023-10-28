@@ -137,7 +137,7 @@ void pi_initialize (void) {
 
 }
 
-void pi_pi_dma_wait (void) {
+void pi_dma_wait (void) {
 	  
 	while (io_read(PI_STATUS_REG) & (SP_STATUS_IO_BUSY | SP_STATUS_DMA_BUSY));
 }
