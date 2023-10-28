@@ -54,6 +54,18 @@
 
 
 typedef enum {
+    DEVICE_VARIANT_UNKNOWN = 0x0000,
+    // // DEVICE_VARIANT_X7_0 = 0x4000,
+    // // DEVICE_VARIANT_X5_0 = 0x4000,
+    DEVICE_VARIANT_V3_0 = 0x3000,
+    DEVICE_VARIANT_V2_5 = 0x2500,
+    DEVICE_VARIANT_V2_0 = 0x2000,
+    // DEVICE_VARIANT_V1_0 = 0x1000,
+    // // DEVICE_VARIANT_P1_0 = 0x1000,
+} ed64_device_variant_t;
+
+
+typedef enum {
     SAVE_TYPE_NONE = 0,
     SAVE_TYPE_SRAM = 1,
     SAVE_TYPE_SRAM_128K = 2,
