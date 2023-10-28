@@ -242,7 +242,7 @@ static flashcart_err_t ed64_load_save (char *save_path) { // from file
     switch (type) {
         case SAVE_TYPE_EEPROM_4K:
         case SAVE_TYPE_EEPROM_16K:
-            ed64_ll_set_eeprom(cartsave_data, save_file_size);
+            ed64_ll_set_eeprom(cartsave_data, type, false);
             break;
         case SAVE_TYPE_SRAM:
             ed64_ll_set_sram(cartsave_data, save_file_size);
@@ -318,7 +318,7 @@ static flashcart_err_t ed64_pesudo_set_save_writeback (void) {
         switch (current_state.is_save_type) {
             case SAVE_TYPE_EEPROM_4K:
             case SAVE_TYPE_EEPROM_16K:
-                ed64_ll_get_eeprom(cartsave_data, save_size);
+                 ed64_ll_get_eeprom(cartsave_data, current_state.is_save_type);
                 break;
             case SAVE_TYPE_SRAM:
             case SAVE_TYPE_SRAM_128K:
