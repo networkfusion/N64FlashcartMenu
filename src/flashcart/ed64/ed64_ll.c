@@ -8,23 +8,26 @@
 /* ED64 configuration registers base address  */
 #define ED64_CONFIG_REGS_BASE (0xA8040000)
 
+/* ED64 configuration registers  */
 typedef enum {
-    // REG_CFG = 0,
-    // REG_STATUS = 1,
-    // REG_DMA_LENGTH = 2,
-    // REG_DMA_RAM_ADDR = 3,
-    // REG_MSG = 4,
-    // REG_DMA_CFG = 5,
-    // REG_SPI = 6,
-    // REG_SPI_CFG = 7,
-    // REG_KEY = 8,
-    REG_SAV_CFG = 9,
-    // REG_SEC = 10, /* Sectors?? */
-    // REG_FPGA_VERSION = 11, /* Altera (Intel) MAX */
-    // REG_GPIO = 12,
+    // REG_CFG = 0x00,
+    // REG_STATUS = 0x01,
+    // REG_DMA_LENGTH = 0x02,
+    // REG_DMA_RAM_ADDR = 0x03,
+    // REG_MSG = 0x04,
+    // REG_DMA_CFG = 0x05,
+    // REG_SPI = 0x06,
+    // REG_SPI_CFG = 0x07,
+    // REG_KEY = 0x08,
+    REG_SAV_CFG = 0x09,
+    // REG_SEC = 0x0A, /* Sectors?? */
+    // REG_FPGA_VERSION = 0x0B, //11, /* Altera (Intel) MAX */
+    // REG_GPIO = 0x0C, //12,
 
-} ed64_registers_t;
+} ed64_ci_registers_id_t;
 
+
+/* ED64 Device Variant Mask  */
 #define ED64_DEVICE_VARIANT_MASK         (0xF000)
 
 void pi_initialize (void);
@@ -38,13 +41,14 @@ void pi_dma_from_cart_safe (void *dest, void *src, unsigned long size);
 void ed64_ll_set_sdcard_timing (void);
 
 
-#define SAV_EEP_ON 1
-#define SAV_SRM_ON 2
-#define SAV_EEP_SIZE 4
-#define SAV_SRM_SIZE 8
-
-#define SAV_RAM_BANK 128
-#define SAV_RAM_BANK_APPLY 32768
+typedef enum {
+    SAV_EEP_ON_OFF = 0x01,
+    SAV_SRM_ON_OFF = 0x02,
+    SAV_EEP_SMALL_BIG = 0x04,
+    SAV_SRM_SMALL_BIG = 0x08,
+    SAV_RAM_BANK = 128,
+    SAV_RAM_BANK_APPLY = 32768
+} ed64_v_save_register_id_t;
 
 uint32_t ed64_ll_reg_read (uint32_t reg);
 void ed64_ll_reg_write (uint32_t reg, uint32_t data);
@@ -78,46 +82,46 @@ ed64_save_type_t ed64_ll_get_save_type (void) {
 void ed64_ll_set_save_type (ed64_save_type_t type) {
 
     uint16_t save_cfg;
-    uint8_t eeprom_on, sram_on, eeprom_size, sram_size, ram_bank;
+    uint8_t is_eeprom, is_sram, is_eeprom_16k, is_sram_128k, using_ram_bank;
     ed64_ll_save_type = type;
-    eeprom_on = 0;
-    sram_on = 0;
-    eeprom_size = 0;
-    sram_size = 0;
-    ram_bank = ed64_ll_sram_bank;
+    is_eeprom = false;
+    is_sram = false;
+    is_eeprom_16k = false;
+    is_sram_128k = false;
+    using_ram_bank = ed64_ll_sram_bank;
 
 
     switch (type) {
         case SAVE_TYPE_EEPROM_16K:
-            eeprom_on = 1;
-            eeprom_size = 1;
+            is_eeprom = true;
+            is_eeprom_16k = true;
             break;
         case SAVE_TYPE_EEPROM_4K:
-            eeprom_on = 1;
+            is_eeprom = true;
             break;
         case SAVE_TYPE_SRAM:
-            sram_on = 1;
+            is_sram = true;
             break;
         case SAVE_TYPE_SRAM_128K:
-            sram_on = 1;
-            sram_size = 1;
+            is_sram = true;
+            is_sram_128k = true;
             break;
         case SAVE_TYPE_FLASHRAM:
-            sram_on = 0;
-            sram_size = 1;
+            is_sram = false;
+            is_sram_128k = true;
             break;
         default:
-            sram_on = 0;
-            sram_size = 0;
-            ram_bank = 1;
+            is_sram = false;
+            is_sram_128k = false;
+            using_ram_bank = 1;
             break;
     }
 
-    if (eeprom_on)save_cfg |= SAV_EEP_ON;
-    if (sram_on)save_cfg |= SAV_SRM_ON;
-    if (eeprom_size)save_cfg |= SAV_EEP_SIZE;
-    if (sram_size)save_cfg |= SAV_SRM_SIZE;
-    if (ram_bank)save_cfg |= SAV_RAM_BANK;
+    if (is_eeprom)save_cfg |= SAV_EEP_ON_OFF;
+    if (is_sram)save_cfg |= SAV_SRM_ON_OFF;
+    if (is_eeprom_16k)save_cfg |= SAV_EEP_SMALL_BIG;
+    if (is_sram_128k)save_cfg |= SAV_SRM_SMALL_BIG;
+    if (using_ram_bank)save_cfg |= SAV_RAM_BANK;
     save_cfg |= SAV_RAM_BANK_APPLY;
 
     ed64_ll_reg_write(REG_SAV_CFG, save_cfg);
