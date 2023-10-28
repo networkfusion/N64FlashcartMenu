@@ -83,12 +83,12 @@ void ed64_ll_set_save_type (ed64_save_type_t type);
 
 int ed64_ll_get_sram_128 (uint8_t *buffer, int size);
 int ed64_ll_get_sram (uint8_t *buffer, int size);
-int ed64_ll_get_eeprom (uint8_t *buffer, int size);
+void ed64_ll_get_eeprom (uint8_t *buffer, uint8_t type);
 int ed64_ll_get_fram (uint8_t *buffer, int size);
 
 int ed64_ll_set_sram_128 (uint8_t *buffer, int size);
 int ed64_ll_set_sram (uint8_t *buffer, int size);
-int ed64_ll_set_eeprom (uint8_t *buffer, int size);
+uint8_t ed64_ll_set_eeprom (uint8_t *src, uint8_t eep_type, bool verify);
 int ed64_ll_set_fram (uint8_t *buffer, int size);
 
 /** @} */ /* ed64 */

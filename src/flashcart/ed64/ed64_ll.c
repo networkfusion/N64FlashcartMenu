@@ -287,14 +287,22 @@ int ed64_ll_get_sram (uint8_t *buffer, int size) {
 
 }
 
-int ed64_ll_get_eeprom (uint8_t *buffer, int size) {
+void ed64_ll_get_eeprom (uint8_t *buffer, uint8_t eep_type) {
 
-    int blocks=size/8;
-    for( int b = 0; b < blocks; b++ ) {
-        eeprom_read( b, &buffer[b * 8] );
+
+    uint32_t i;
+    uint32_t slen = eep_type == SAVE_TYPE_EEPROM_16K ? 4 : SAVE_TYPE_EEPROM_4K ? 1 : 0;
+    if (slen == 0) {
+        return;
     }
 
-    return 1;
+    ed64_ll_set_save_type(eep_type);
+    eeprom_present();
+
+    for (i = 0; i < slen * 512; i += 8) {
+        eeprom_read(i / 8, &buffer[i]);
+    }
+    ed64_ll_set_save_type(SAVE_TYPE_NONE);
 
 }
 
@@ -373,15 +381,36 @@ int ed64_ll_set_sram (uint8_t *buffer, int size) {
 }
 
 
-int ed64_ll_set_eeprom (uint8_t *buffer, int size) {
+uint8_t ed64_ll_set_eeprom(uint8_t *src, uint8_t eep_type, bool verify) {
 
-    int blocks=size/8;
-    for( int b = 0; b < blocks; b++ ) {
-        eeprom_write( b, &buffer[b * 8] );
+    uint8_t buff[2048];
+    uint32_t i;
+    uint8_t slen = eep_type == SAVE_TYPE_EEPROM_16K ? 4 : SAVE_TYPE_EEPROM_4K ? 1 : 0;
+    if (slen == 0) {
+        return 0;
     }
 
-    return 1;
+    ed64_ll_set_save_type(eep_type);
+    eeprom_present();
 
+    for (i = 0; i < slen * 512; i += 8) {
+        eeprom_write(i / 8, &src[i]);
+    }
+
+    if (verify) {
+        for (i = 0; i < slen * 512; i += 8) {
+            eeprom_read(i / 8, &buff[i]);
+        }
+        for (i = 0; i < slen * 512; i++) {
+            if (src[i] != buff[i]) {
+                return 1; //ERR_EEP_CHECK;
+            }
+        }
+    }
+
+    ed64_ll_set_save_type(SAVE_TYPE_NONE);
+
+    return 0;
 }
 
 int ed64_ll_set_fram (uint8_t *buffer, int size) {
