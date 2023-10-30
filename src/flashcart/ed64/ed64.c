@@ -41,6 +41,7 @@ static flashcart_err_t ed64_init (void) {
 
     // FIXME: should be checking whether the console was a hot restart here!
     // Cold restarts are only available with battery backup.
+    // if (sys_reset_type() != RESET_COLD || RTC == true)
     if (current_state.is_expecting_save_writeback == true) {
 
         return ed64_pesudo_set_save_writeback();
