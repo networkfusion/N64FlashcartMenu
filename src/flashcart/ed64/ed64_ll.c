@@ -289,18 +289,16 @@ int ed64_ll_get_sram (uint8_t *buffer, int size) {
 
 void ed64_ll_get_eeprom (uint8_t *buffer, uint8_t eep_type) {
 
-
-    uint32_t i;
     uint32_t size = eep_type == SAVE_TYPE_EEPROM_16K ? 4 : SAVE_TYPE_EEPROM_4K ? 1 : 0;
-    if (size == 0) {
-        return;
-    }
 
-    ed64_ll_set_save_type(eep_type);
-    eeprom_present();
+    if (size != 0) {
+        ed64_ll_set_save_type(eep_type);
+        if (eeprom_present()) { // FIXME: does not correctly check type.
 
-    for (i = 0; i < size; i += 8) {
-        eeprom_read(i / 8, &buffer[i]);
+            for (uint32_t i = 0; i < size; i += 8) {
+                eeprom_read(i / 8, &buffer[i]);
+            }
+        }
     }
     ed64_ll_set_save_type(SAVE_TYPE_NONE);
 
@@ -381,32 +379,35 @@ int ed64_ll_set_sram (uint8_t *buffer, int size) {
 }
 
 
-uint8_t ed64_ll_set_eeprom(uint8_t *src, uint8_t eep_type, bool verify) {
+// uint8_t ed64_ll_set_eeprom(uint8_t *buffer, eeprom_type_t eep_type, bool verify) {
+uint8_t ed64_ll_set_eeprom(uint8_t *buffer, uint8_t eep_type) {
 
-    uint8_t buffer[2048];
-    uint32_t i;
     uint8_t size = eep_type == SAVE_TYPE_EEPROM_16K ? 4 : SAVE_TYPE_EEPROM_4K ? 1 : 0;
 
-    if (size == 0) {
+    if (size == 0) { // SAVE_TYPE_NONE
         return 0;
     }
 
     ed64_ll_set_save_type(eep_type);
-    eeprom_present();
 
-    for (i = 0; i < size; i += 8) {
-        eeprom_write(i / 8, &src[i]);
-    }
+    if (eeprom_present()) { // FIXME: does not correctly check type.
 
-    if (verify) {
-        for (i = 0; i < size; i += 8) {
-            eeprom_read(i / 8, &buffer[i]);
+        for (uint32_t i = 0; i < size; i += 8) {
+            eeprom_write(i / 8, &buffer[i]);
         }
-        for (i = 0; i < size; i++) {
-            if (src[i] != buffer[i]) {
-                return 1; //ERR_EEP_CHECK;
-            }
-        }
+
+        // if (verify) { // FIXME: This is a smoke test and should be seperated!
+        //     uint8_t tmp_buffer[2048];
+        //     uint32_t j;
+        //     for (j = 0; j < size; j += 8) {
+        //         eeprom_read(j / 8, &tmp_buffer[j]);
+        //     }
+        //     for (j = 0; j < size; j++) {
+        //         if (buffer[j] != tmp_buffer[j]) {
+        //             return 1; //ERR_EEP_CHECK;
+        //         }
+        //     }
+        // }
     }
 
     ed64_ll_set_save_type(SAVE_TYPE_NONE);
