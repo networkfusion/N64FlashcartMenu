@@ -31,7 +31,6 @@ An open source menu for N64 flashcarts.
 
 
 ## Getting started
-
 Using your PC, insert the SD card and ensure it is formatted for compatibility (We recommend FAT32 in most instances).
 
 
