@@ -3,6 +3,15 @@
 #include "utils/utils.h"
 #include "ed64_ll.h"
 
+void sleep(unsigned long ms);
+
+void sleep(unsigned long ms) {
+
+    unsigned long current_ms = get_ticks_ms();
+
+    while (get_ticks_ms() - current_ms < ms);
+
+}
 
 
 /* ED64 configuration registers base address  */
@@ -129,6 +138,27 @@ void ed64_ll_set_sram_bank (uint8_t bank) {
 
 }
 
+void _data_cache_invalidate_all(void) {
+    asm(
+        "li $8,0x80000000;"
+        "li $9,0x80000000;"
+        "addu $9,$9,0x1FF0;"
+        "cacheloop:;"
+        "cache 1,0($8);"
+        "cache 1,16($8);"
+        "cache 1,32($8);"
+        "cache 1,48($8);"
+        "cache 1,64($8);"
+        "cache 1,80($8);"
+        "cache 1,96($8);"
+        "addu $8,$8,112;"
+        "bne $8,$9,cacheloop;"
+        "cache 1,0($8);"
+    : // no outputs
+    : // no inputs
+    : "$8", "$9" // trashed registers
+    );
+}
 
 void pi_initialize (void) {
 
@@ -139,7 +169,7 @@ void pi_initialize (void) {
 
 void pi_dma_wait (void) {
 	  
-	while (ED_IO_READ(PI_STATUS_REG) & (SP_STATUS_IO_BUSY | SP_STATUS_DMA_BUSY));
+	while (ED_IO_READ(PI_STATUS_REG) & (PI_STATUS_IO_BUSY | PI_STATUS_DMA_BUSY));
 }
 
 // Inits PI for sram transfer
@@ -170,6 +200,7 @@ void pi_dma_to_sram (void *src, unsigned long offset, unsigned long size) {
 	ED_IO_WRITE(PI_STATUS_REG, 2);
 	ED_IO_WRITE(PI_DRAM_ADDR_REG, K1_TO_PHYS(src));
 	ED_IO_WRITE(PI_CART_ADDR_REG, (0xA8000000 + offset));
+    _data_cache_invalidate_all();
 	ED_IO_WRITE(PI_RD_LEN_REG, (size - 1));
 
 }
@@ -230,24 +261,24 @@ void pi_dma_from_cart_safe (void *dest, void *src, unsigned long size) {
 
 int ed64_ll_get_sram_128 (uint8_t *buffer, int size) {
 
-    dma_wait();
+    while (dma_busy()) ;
 
     ED_IO_WRITE(PI_BSD_DOM2_LAT_REG, 0x05);
     ED_IO_WRITE(PI_BSD_DOM2_PWD_REG, 0x0C);
     ED_IO_WRITE(PI_BSD_DOM2_PGS_REG, 0x0D);
     ED_IO_WRITE(PI_BSD_DOM2_RLS_REG, 0x02);
 
-    dma_wait();
+    while (dma_busy()) ;
 
     pi_initialize();
 
-    dma_wait();
+    sleep(250);
 
     // Offset Large RAM size 128KiB with a 16KiB nudge to allocate enough space
     // We do this because 128Kib is not recognised and a 32KiB allocates too little 
     pi_dma_from_sram(buffer, -(size - KiB(16)), size);
 
-    dma_wait();
+    while (dma_busy()) ;
 
     ED_IO_WRITE(PI_BSD_DOM2_LAT_REG, 0x40);
     ED_IO_WRITE(PI_BSD_DOM2_PWD_REG, 0x12);
@@ -261,22 +292,22 @@ int ed64_ll_get_sram_128 (uint8_t *buffer, int size) {
 
 int ed64_ll_get_sram (uint8_t *buffer, int size) {
 
-    dma_wait();
+    while (dma_busy()) ;
 
     ED_IO_WRITE(PI_BSD_DOM2_LAT_REG, 0x05);
     ED_IO_WRITE(PI_BSD_DOM2_PWD_REG, 0x0C);
     ED_IO_WRITE(PI_BSD_DOM2_PGS_REG, 0x0D);
     ED_IO_WRITE(PI_BSD_DOM2_RLS_REG, 0x02);
 
-    dma_wait();
+    while (dma_busy()) ;
 
     pi_initialize();
 
-    dma_wait();
+    sleep(250);
 
     pi_dma_from_sram(buffer, 0, size) ;
 
-    dma_wait();
+    while (dma_busy()) ;
 
     ED_IO_WRITE(PI_BSD_DOM2_LAT_REG, 0x40);
     ED_IO_WRITE(PI_BSD_DOM2_PWD_REG, 0x12);
@@ -302,12 +333,12 @@ int ed64_ll_get_eeprom (uint8_t *buffer, int size) {
 int ed64_ll_get_fram (uint8_t *buffer, int size) {
 
     ed64_ll_set_save_type(SAVE_TYPE_SRAM_128K); //2
-    dma_wait();
+    sleep(512);
 
     ed64_ll_get_sram_128(buffer, size);
     data_cache_hit_writeback_invalidate(buffer, size);
 
-    dma_wait();
+    sleep(512);
     ed64_ll_set_save_type(SAVE_TYPE_FLASHRAM);
 
     return 1;
@@ -330,7 +361,7 @@ int ed64_ll_set_sram_128 (uint8_t *buffer, int size) {
     pi_initialize();
 
     data_cache_hit_writeback_invalidate(buffer,size);
-    dma_wait();
+    while (dma_busy()) ;
 
     // Offset Large RAM size 128KiB with a 16KiB nudge to allocate enough space
     // We do this because 128Kib is not recognised and a 32KiB allocates too little 
@@ -338,7 +369,7 @@ int ed64_ll_set_sram_128 (uint8_t *buffer, int size) {
     data_cache_hit_writeback_invalidate(buffer,size);
 
     //Wait
-    pi_dma_wait();
+     pi_dma_wait();
     //Restore evd Timing
     ed64_ll_set_sdcard_timing();
 
@@ -350,7 +381,7 @@ int ed64_ll_set_sram_128 (uint8_t *buffer, int size) {
 int ed64_ll_set_sram (uint8_t *buffer, int size) {
 
     //half working
-    pi_dma_wait();
+     pi_dma_wait();
     //Timing
     pi_initialize_sram();
 
@@ -358,13 +389,13 @@ int ed64_ll_set_sram (uint8_t *buffer, int size) {
     pi_initialize();
 
     data_cache_hit_writeback_invalidate(buffer,size);
-    dma_wait();
+    while (dma_busy()) ;
 
     pi_dma_to_sram(buffer, 0, size);
     data_cache_hit_writeback_invalidate(buffer,size);
 
     //Wait
-    pi_dma_wait();
+     pi_dma_wait();
     //Restore evd Timing
     ed64_ll_set_sdcard_timing();
 
@@ -387,12 +418,12 @@ int ed64_ll_set_eeprom (uint8_t *buffer, int size) {
 int ed64_ll_set_fram (uint8_t *buffer, int size) {
 
     ed64_ll_set_save_type(SAVE_TYPE_SRAM_128K);
-    dma_wait();
+    sleep(512);
 
     ed64_ll_set_sram_128(buffer, size);
     data_cache_hit_writeback_invalidate(buffer, size);
 
-    dma_wait();
+    sleep(512);
     ed64_ll_set_save_type(SAVE_TYPE_FLASHRAM);
 
     return 1;
