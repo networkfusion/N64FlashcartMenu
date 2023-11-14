@@ -270,7 +270,7 @@ void ed64_ll_get_fram (uint8_t *buffer, int size) {
     ed64_ll_set_save_type(SAVE_TYPE_SRAM_128K); //2
     dma_wait();
 
-    ed64_ll_get_sram_128(buffer, size);
+    ed64_ll_get_sram(buffer, size);
     data_cache_hit_writeback_invalidate(buffer, size);
 
     dma_wait();
@@ -328,7 +328,7 @@ void ed64_ll_set_fram (uint8_t *buffer, int size) {
     ed64_ll_set_save_type(SAVE_TYPE_SRAM_128K);
     dma_wait();
 
-    ed64_ll_set_sram_128(buffer, size);
+    ed64_ll_set_sram(buffer, size);
     data_cache_hit_writeback_invalidate(buffer, size);
 
     dma_wait();
