@@ -5,7 +5,7 @@
 
 
 /* ED64 save location base address  */
-#define ED_SAVE_ADDR_BASE     (0xA8000000)
+#define ED64_SAVE_ADDR_BASE   (0xA8000000)
 
 /* ED64 configuration registers base address  */
 #define ED64_CONFIG_REGS_BASE (0xA8040000)
@@ -38,10 +38,6 @@ void pi_dma_from_cart (void* dest, void* src, unsigned long size);
 void pi_dma_to_cart (void* dest, void* src, unsigned long size);
 void pi_dma_from_sram (void *dest, unsigned long offset, unsigned long size);
 void pi_dma_to_sram (void* src, unsigned long offset, unsigned long size);
-void pi_dma_from_cart_safe (void *dest, void *src, unsigned long size);
-
-void ed64_ll_set_sdcard_timing (void);
-
 
 typedef enum {
     SAV_EEP_ON_OFF = 0x01,
@@ -136,7 +132,7 @@ void pi_initialize (void) {
 
 }
 
-// Inits PI for sram transfer
+// Inits PI for sram transfers
 void pi_initialize_sram (void) {
 
 	io_write(PI_BSD_DOM2_LAT_REG, 0x05);
@@ -147,15 +143,12 @@ void pi_initialize_sram (void) {
 }
 
 void pi_dma_from_sram (void *dest, unsigned long offset, unsigned long size) {
-
 	io_write(PI_DRAM_ADDR_REG, K1_TO_PHYS(dest));
-	io_write(PI_CART_ADDR_REG, (ED_SAVE_ADDR_BASE + offset));
+	io_write(PI_CART_ADDR_REG, (ED64_SAVE_ADDR_BASE + offset));
 	 asm volatile ("" : : : "memory");
 	io_write(PI_WR_LEN_REG, (size - 1));
 	 asm volatile ("" : : : "memory");
-
 }
-
 
 void pi_dma_to_sram (void *src, unsigned long offset, unsigned long size) {
 
@@ -163,21 +156,21 @@ void pi_dma_to_sram (void *src, unsigned long offset, unsigned long size) {
 
 	io_write(PI_STATUS_REG, 2);
 	io_write(PI_DRAM_ADDR_REG, K1_TO_PHYS(src));
-	io_write(PI_CART_ADDR_REG, (ED_SAVE_ADDR_BASE + offset));
+	io_write(PI_CART_ADDR_REG, (ED64_SAVE_ADDR_BASE + offset));
 	io_write(PI_RD_LEN_REG, (size - 1));
 
 }
 
-void pi_dma_from_cart (void* dest, void* src, unsigned long size) {
+// void pi_dma_from_cart (void* dest, void* src, unsigned long size) {
 
-	dma_wait();
+// 	dma_wait();
 
-	io_write(PI_STATUS_REG, 0x03);
-	io_write(PI_DRAM_ADDR_REG, K1_TO_PHYS(dest));
-	io_write(PI_CART_ADDR_REG, K0_TO_PHYS(src));
-	io_write(PI_WR_LEN_REG, (size - 1));
+// 	io_write(PI_STATUS_REG, 0x03);
+// 	io_write(PI_DRAM_ADDR_REG, K1_TO_PHYS(dest));
+// 	io_write(PI_CART_ADDR_REG, K0_TO_PHYS(src));
+// 	io_write(PI_WR_LEN_REG, (size - 1));
 
-}
+// }
 
 
 void pi_dma_to_cart (void* dest, void* src, unsigned long size) {
@@ -191,60 +184,26 @@ void pi_dma_to_cart (void* dest, void* src, unsigned long size) {
 
 }
 
+void ed64_ll_get_sram (uint8_t *buffer, uint32_t address_offset, uint32_t size) {
 
-// Wrapper to support unaligned access to memory
-void pi_dma_from_cart_safe (void *dest, void *src, unsigned long size) {
+    // TODO: potentially set the type so it can be used rather than an offset from the initial address.
 
-	if (!dest || !src || !size) return;
+    // collect current timings
+    uint32_t initalLatReg = io_read(PI_BSD_DOM2_LAT_REG);
+    uint32_t initalPwdReg = io_read(PI_BSD_DOM2_PWD_REG);
+    uint32_t initalPgsReg = io_read(PI_BSD_DOM2_PGS_REG);
+    uint32_t initalRlsReg = io_read(PI_BSD_DOM2_RLS_REG);
 
-	unsigned long unalignedSrc  = ((unsigned long)src)  % 2;
-	unsigned long unalignedDest = ((unsigned long)dest) % 8;
+    // set temporary timings for SRAM
+    pi_initialize_sram();
 
-	//FIXME: Do i really need to check if size is 16bit aligned?
-	if (!unalignedDest && !unalignedSrc && !(size % 2)) {
-		pi_dma_from_cart(dest, src, size);
-		dma_wait();
+    pi_dma_from_sram(buffer, address_offset, size);
 
-		return;
-	}
-
-	void* newSrc = (void*)(((unsigned long)src) - unalignedSrc);
-	unsigned long newSize = (size + unalignedSrc) + ((size + unalignedSrc) % 2);
-
-	unsigned char *buffer = memalign(8, newSize);
-	pi_dma_from_cart(buffer, newSrc, newSize);
-	dma_wait();
-
-	memcpy(dest, (buffer + unalignedSrc), size);
-
-	free(buffer);
-
-}
-
-
-void ed64_ll_get_sram (uint8_t *buffer, int size) {
-
-    dma_wait();
-
-    io_write(PI_BSD_DOM2_LAT_REG, 0x05);
-    io_write(PI_BSD_DOM2_PWD_REG, 0x0C);
-    io_write(PI_BSD_DOM2_PGS_REG, 0x0D);
-    io_write(PI_BSD_DOM2_RLS_REG, 0x02);
-
-    dma_wait();
-
-    pi_initialize();
-
-    dma_wait();
-
-    pi_dma_from_sram(buffer, 0, size) ;
-
-    dma_wait();
-
-    io_write(PI_BSD_DOM2_LAT_REG, 0x40);
-    io_write(PI_BSD_DOM2_PWD_REG, 0x12);
-    io_write(PI_BSD_DOM2_PGS_REG, 0x07);
-    io_write(PI_BSD_DOM2_RLS_REG, 0x03);
+    // restore inital timings
+    io_write(PI_BSD_DOM2_LAT_REG, initalLatReg);
+    io_write(PI_BSD_DOM2_PWD_REG, initalPwdReg);
+    io_write(PI_BSD_DOM2_PGS_REG, initalPgsReg);
+    io_write(PI_BSD_DOM2_RLS_REG, initalRlsReg);
 
 }
 
@@ -270,7 +229,7 @@ void ed64_ll_get_fram (uint8_t *buffer, int size) {
     ed64_ll_set_save_type(SAVE_TYPE_SRAM_128K); //2
     dma_wait();
 
-    ed64_ll_get_sram(buffer, size);
+    ed64_ll_get_sram(buffer, 0, size);
     data_cache_hit_writeback_invalidate(buffer, size);
 
     dma_wait();
@@ -281,24 +240,24 @@ void ed64_ll_get_fram (uint8_t *buffer, int size) {
 
 void ed64_ll_set_sram (uint8_t *buffer, int size) {
 
-    //half working
-    dma_wait();
-    //Timing
+    // TODO: potentially set the type so it can be used as an offset from the initial address.
+
+    // collect current timings
+    uint32_t initalLatReg = io_read(PI_BSD_DOM2_LAT_REG);
+    uint32_t initalPwdReg = io_read(PI_BSD_DOM2_PWD_REG);
+    uint32_t initalPgsReg = io_read(PI_BSD_DOM2_PGS_REG);
+    uint32_t initalRlsReg = io_read(PI_BSD_DOM2_RLS_REG);
+
+    // set temporary timings for SRAM
     pi_initialize_sram();
 
-    //Readmode
-    pi_initialize();
-
-    data_cache_hit_writeback_invalidate(buffer,size);
-    dma_wait();
-
     pi_dma_to_sram(buffer, 0, size);
-    data_cache_hit_writeback_invalidate(buffer,size);
 
-    //Wait
-    dma_wait();
-    //Restore evd Timing
-    ed64_ll_set_sdcard_timing();
+    // restore inital timings
+    io_write(PI_BSD_DOM2_LAT_REG, initalLatReg);
+    io_write(PI_BSD_DOM2_PWD_REG, initalPwdReg);
+    io_write(PI_BSD_DOM2_PGS_REG, initalPgsReg);
+    io_write(PI_BSD_DOM2_RLS_REG, initalRlsReg);
 
 }
 
@@ -333,20 +292,5 @@ void ed64_ll_set_fram (uint8_t *buffer, int size) {
 
     dma_wait();
     ed64_ll_set_save_type(SAVE_TYPE_FLASHRAM);
-
-}
-
-
-void ed64_ll_set_sdcard_timing (void) {
-
-    io_write(PI_BSD_DOM1_LAT_REG, 0x40);
-    io_write(PI_BSD_DOM1_PWD_REG, 0x12);
-    io_write(PI_BSD_DOM1_PGS_REG, 0x07);
-    io_write(PI_BSD_DOM1_RLS_REG, 0x03);
-
-    io_write(PI_BSD_DOM2_LAT_REG, 0x40);
-    io_write(PI_BSD_DOM2_PWD_REG, 0x12);
-    io_write(PI_BSD_DOM2_PGS_REG, 0x07);
-    io_write(PI_BSD_DOM2_RLS_REG, 0x03);
 
 }

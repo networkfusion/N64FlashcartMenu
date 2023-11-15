@@ -78,7 +78,7 @@ void ed64_ll_set_sram_bank (uint8_t bank);
 ed64_save_type_t ed64_ll_get_save_type ();
 void ed64_ll_set_save_type (ed64_save_type_t type);
 
-void ed64_ll_get_sram (uint8_t *buffer, int size);
+void ed64_ll_get_sram (uint8_t *buffer, uint32_t address_offset, uint32_t size);
 void ed64_ll_get_eeprom (uint8_t *buffer, uint8_t type);
 void ed64_ll_get_fram (uint8_t *buffer, int size);
 
