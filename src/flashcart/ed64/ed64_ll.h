@@ -82,7 +82,7 @@ void ed64_ll_get_sram (uint8_t *buffer, uint32_t address_offset, uint32_t size);
 void ed64_ll_get_eeprom (uint8_t *buffer, uint8_t type);
 void ed64_ll_get_fram (uint8_t *buffer, int size);
 
-void ed64_ll_set_sram (uint8_t *buffer, int size);
+void ed64_ll_set_sram (uint8_t *buffer, uint32_t address_offset, int size);
 uint8_t ed64_ll_set_eeprom (uint8_t *buffer, uint8_t eep_type);
 void ed64_ll_set_fram (uint8_t *buffer, int size);
 

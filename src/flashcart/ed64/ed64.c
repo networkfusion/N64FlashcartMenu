@@ -198,7 +198,7 @@ static flashcart_err_t ed64_load_save (char *save_path) { // from file
             break;
         case SAVE_TYPE_SRAM:
         case SAVE_TYPE_SRAM_128K:
-            ed64_ll_set_sram(cartsave_data, save_file_size);
+            ed64_ll_set_sram(cartsave_data, 0, save_file_size);
             break;
         case SAVE_TYPE_FLASHRAM:
             ed64_ll_set_fram(cartsave_data, save_file_size);

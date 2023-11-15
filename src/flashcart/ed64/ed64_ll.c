@@ -2,6 +2,7 @@
 #include <libdragon.h>
 #include "utils/utils.h"
 #include "ed64_ll.h"
+#include "../flashcart_utils.h"
 
 
 /* ED64 save location base address  */
@@ -34,10 +35,6 @@ typedef enum {
 
 void pi_initialize (void);
 void pi_initialize_sram (void);
-void pi_dma_from_cart (void* dest, void* src, unsigned long size);
-void pi_dma_to_cart (void* dest, void* src, unsigned long size);
-void pi_dma_from_sram (void *dest, unsigned long offset, unsigned long size);
-void pi_dma_to_sram (void* src, unsigned long offset, unsigned long size);
 
 typedef enum {
     SAV_EEP_ON_OFF = 0x01,
@@ -142,48 +139,6 @@ void pi_initialize_sram (void) {
 
 }
 
-void pi_dma_from_sram (void *dest, unsigned long offset, unsigned long size) {
-	io_write(PI_DRAM_ADDR_REG, K1_TO_PHYS(dest));
-	io_write(PI_CART_ADDR_REG, (ED64_SAVE_ADDR_BASE + offset));
-	 asm volatile ("" : : : "memory");
-	io_write(PI_WR_LEN_REG, (size - 1));
-	 asm volatile ("" : : : "memory");
-}
-
-void pi_dma_to_sram (void *src, unsigned long offset, unsigned long size) {
-
-	dma_wait();
-
-	io_write(PI_STATUS_REG, 2);
-	io_write(PI_DRAM_ADDR_REG, K1_TO_PHYS(src));
-	io_write(PI_CART_ADDR_REG, (ED64_SAVE_ADDR_BASE + offset));
-	io_write(PI_RD_LEN_REG, (size - 1));
-
-}
-
-// void pi_dma_from_cart (void* dest, void* src, unsigned long size) {
-
-// 	dma_wait();
-
-// 	io_write(PI_STATUS_REG, 0x03);
-// 	io_write(PI_DRAM_ADDR_REG, K1_TO_PHYS(dest));
-// 	io_write(PI_CART_ADDR_REG, K0_TO_PHYS(src));
-// 	io_write(PI_WR_LEN_REG, (size - 1));
-
-// }
-
-
-void pi_dma_to_cart (void* dest, void* src, unsigned long size) {
-
-	dma_wait();
-
-	io_write(PI_STATUS_REG, 0x02);
-	io_write(PI_DRAM_ADDR_REG, K1_TO_PHYS(src));
-	io_write(PI_CART_ADDR_REG, K0_TO_PHYS(dest));
-	io_write(PI_RD_LEN_REG, (size - 1));
-
-}
-
 void ed64_ll_get_sram (uint8_t *buffer, uint32_t address_offset, uint32_t size) {
 
     // TODO: potentially set the type so it can be used rather than an offset from the initial address.
@@ -197,7 +152,7 @@ void ed64_ll_get_sram (uint8_t *buffer, uint32_t address_offset, uint32_t size) 
     // set temporary timings for SRAM
     pi_initialize_sram();
 
-    pi_dma_from_sram(buffer, address_offset, size);
+    pi_dma_read_data((void*)(ED64_SAVE_ADDR_BASE + address_offset), buffer, size);
 
     // restore inital timings
     io_write(PI_BSD_DOM2_LAT_REG, initalLatReg);
@@ -238,9 +193,7 @@ void ed64_ll_get_fram (uint8_t *buffer, int size) {
 }
 
 
-void ed64_ll_set_sram (uint8_t *buffer, int size) {
-
-    // TODO: potentially set the type so it can be used as an offset from the initial address.
+void ed64_ll_set_sram (uint8_t *buffer, uint32_t address_offset, int size) {
 
     // collect current timings
     uint32_t initalLatReg = io_read(PI_BSD_DOM2_LAT_REG);
@@ -251,7 +204,7 @@ void ed64_ll_set_sram (uint8_t *buffer, int size) {
     // set temporary timings for SRAM
     pi_initialize_sram();
 
-    pi_dma_to_sram(buffer, 0, size);
+    pi_dma_write_data(buffer, (void*)(ED64_SAVE_ADDR_BASE + address_offset), size);
 
     // restore inital timings
     io_write(PI_BSD_DOM2_LAT_REG, initalLatReg);
@@ -287,7 +240,7 @@ void ed64_ll_set_fram (uint8_t *buffer, int size) {
     ed64_ll_set_save_type(SAVE_TYPE_SRAM_128K);
     dma_wait();
 
-    ed64_ll_set_sram(buffer, size);
+    ed64_ll_set_sram(buffer, 0, size);
     data_cache_hit_writeback_invalidate(buffer, size);
 
     dma_wait();
