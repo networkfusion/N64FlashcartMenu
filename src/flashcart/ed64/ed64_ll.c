@@ -33,8 +33,7 @@ typedef enum {
 /* ED64 Device Variant Mask  */
 #define ED64_DEVICE_VARIANT_MASK         (0xF000)
 
-void pi_initialize (void);
-void pi_initialize_sram (void);
+void set_sram_pi_regs (void);
 
 typedef enum {
     SAV_EEP_ON_OFF = 0x01,
@@ -121,16 +120,8 @@ void ed64_ll_set_sram_bank (uint8_t bank) {
 
 }
 
-
-void pi_initialize (void) {
-
-	dma_wait();
-	io_write(PI_STATUS_REG, 0x03);
-
-}
-
 // Inits PI for sram transfers
-void pi_initialize_sram (void) {
+void set_sram_pi_regs (void) {
 
 	io_write(PI_BSD_DOM2_LAT_REG, 0x05);
 	io_write(PI_BSD_DOM2_PWD_REG, 0x0C);
@@ -150,7 +141,7 @@ void ed64_ll_get_sram (uint8_t *buffer, uint32_t address_offset, uint32_t size) 
     uint32_t initalRlsReg = io_read(PI_BSD_DOM2_RLS_REG);
 
     // set temporary timings for SRAM
-    pi_initialize_sram();
+    set_sram_pi_regs();
 
     pi_dma_read_data((void*)(ED64_SAVE_ADDR_BASE + address_offset), buffer, size);
 
@@ -202,7 +193,7 @@ void ed64_ll_set_sram (uint8_t *buffer, uint32_t address_offset, int size) {
     uint32_t initalRlsReg = io_read(PI_BSD_DOM2_RLS_REG);
 
     // set temporary timings for SRAM
-    pi_initialize_sram();
+    set_sram_pi_regs();
 
     pi_dma_write_data(buffer, (void*)(ED64_SAVE_ADDR_BASE + address_offset), size);
 
