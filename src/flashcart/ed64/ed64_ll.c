@@ -143,6 +143,7 @@ void ed64_ll_get_sram (uint8_t *buffer, uint32_t address_offset, uint32_t size) 
     // set temporary timings for SRAM
     set_sram_pi_regs();
 
+    // read data
     pi_dma_read_data((void*)(ED64_SAVE_ADDR_BASE + address_offset), buffer, size);
 
     // restore inital timings
@@ -195,6 +196,7 @@ void ed64_ll_set_sram (uint8_t *buffer, uint32_t address_offset, int size) {
     // set temporary timings for SRAM
     set_sram_pi_regs();
 
+    // write data
     pi_dma_write_data(buffer, (void*)(ED64_SAVE_ADDR_BASE + address_offset), size);
 
     // restore inital timings
