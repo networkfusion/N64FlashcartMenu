@@ -33,7 +33,7 @@ void ed64_state_save (ed64_pseudo_writeback_t *state) {
     mini_t *ini = mini_create(ED64_STATE_FILE_PATH);
 
     mini_set_bool(ini, "ed64", "is_expecting_save_writeback", state->is_expecting_save_writeback);
-    mini_set_int(ini, "ed64", "is_fram_save_type", state->is_save_type);
+    mini_set_int(ini, "ed64", "is_save_type", state->is_save_type);
     mini_set_string(ini, "ed64", "last_save_path", state->last_save_path);
 
     mini_save(ini, MINI_FLAGS_SKIP_EMPTY_GROUPS);

@@ -37,15 +37,17 @@ static flashcart_err_t ed64_init (void) {
     // older everdrives cannot save during gameplay so we need to the reset method.
     // works by checking if a file exists.
 
+    // load the ed64 state file
     ed64_state_load(&current_state);
 
-    // FIXME: should be checking whether the console was a hot restart here!
     // Cold restarts are only available with battery backup.
-    // if (sys_reset_type() != RESET_COLD || RTC == true)
+    // FIXME: add hot restarts with: ` || RTC == true`
+    
     if (current_state.is_expecting_save_writeback == true) {
 
         return ed64_pesudo_set_save_writeback();
     }
+    
     return FLASHCART_OK;
 }
 
@@ -260,7 +262,11 @@ static flashcart_err_t ed64_pesudo_set_save_writeback (void) {
     uint8_t cartsave_data[KiB(128)];
 
     // find the path to last save
-    if (file_exists(strip_sd_prefix(current_state.last_save_path)) && current_state.is_save_type != SAVE_TYPE_NONE) {
+    if (
+            file_exists(strip_sd_prefix(current_state.last_save_path))
+            && current_state.is_save_type != SAVE_TYPE_NONE
+            && sys_reset_type() != RESET_COLD
+        ) {
 
         int save_size = file_get_size(current_state.last_save_path);
 
