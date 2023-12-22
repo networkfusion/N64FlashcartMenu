@@ -14,10 +14,18 @@
 #include "ed64.h"
 #include "ed64_state.h"
 
+/**
+ * The ED64's variant, read from the CPLD
+ */
+// static ed64_device_variant_t device_variant = DEVICE_VARIANT_UNKNOWN;
 
+/**
+ * The ED64's current state
+ */
 static ed64_pseudo_writeback_t current_state;
 
 extern int ed_exit (void);
+static flashcart_err_t ed64_pesudo_set_save_writeback (void);
 
 static flashcart_err_t ed64_init (void) {
 
@@ -29,58 +37,17 @@ static flashcart_err_t ed64_init (void) {
     // older everdrives cannot save during gameplay so we need to the reset method.
     // works by checking if a file exists.
 
+    // load the ed64 state file
     ed64_state_load(&current_state);
 
+    // Cold restarts are only available with battery backup.
+    // FIXME: add hot restarts with: ` || RTC == true`
+    
     if (current_state.is_expecting_save_writeback == true) {
 
-        // make sure next boot doesnt trigger the check changing its state.
-        current_state.is_expecting_save_writeback = false;
-        ed64_state_save(&current_state);
-
-        // Now save the content back to the SD card!
-        FIL fil;
-        UINT bw;
-        uint8_t cartsave_data[KiB(128)];
-
-        // find the path to last save
-        if (file_exists(strip_sd_prefix(current_state.last_save_path))) {
-
-            int save_size = file_get_size(current_state.last_save_path);
-
-            if ((f_open(&fil, strip_sd_prefix(current_state.last_save_path), FA_CREATE_ALWAYS | FA_READ | FA_WRITE)) != FR_OK) {
-                return FLASHCART_ERR_LOAD;
-            }
-
-            // everdrive doesn't care about the save type other than flash sram and eeprom
-            // so minus flashram we can just check the size
-            if (current_state.is_fram_save_type == true) { // flashram is bugged atm
-               ed64_ll_get_fram(cartsave_data, save_size);
-              // deletes flag
-              current_state.is_fram_save_type = false;
-              ed64_state_save(&current_state);
-            }
-            else if (save_size > KiB(2)) { // sram
-               ed64_ll_get_sram(cartsave_data, save_size);
-            }
-            else { // eeprom
-               ed64_ll_get_eeprom(cartsave_data, save_size);
-            }
-
-            if (f_write(&fil, cartsave_data, save_size, &bw) != FR_OK) {
-                return FLASHCART_ERR_LOAD;
-            }
-
-            if (f_close(&fil) != FR_OK) {
-                return FLASHCART_ERR_LOAD;
-            }
-        }
-        else {
-            current_state.is_expecting_save_writeback = false;
-            current_state.is_fram_save_type = false;
-            current_state.last_save_path = "";
-            ed64_state_save(&current_state);
-        }
+        return ed64_pesudo_set_save_writeback();
     }
+    
     return FLASHCART_OK;
 }
 
@@ -116,7 +83,7 @@ static flashcart_err_t ed64_load_rom (char *rom_path, flashcart_progress_callbac
 
     // FIXME: if the cart is not V3 or X5 or X7, we need probably need to - 128KiB for save compatibility.
     // Or somehow warn that certain ROM's will have corruption due to the address space being used for saves.
-    // Conker's Bad Fur Day doesn't have this issue because eeprom data is at a fixed address in pif ram.
+    // EEPROM saves should be unaffected.
     if (rom_size > MiB(64)) {
         f_close(&fil);
         return FLASHCART_ERR_LOAD;
@@ -124,7 +91,7 @@ static flashcart_err_t ed64_load_rom (char *rom_path, flashcart_progress_callbac
 
     // FIXME: is this actually needed?
     /*
-    if (rom_size == MiB(64)) {
+    if (rom_size <= MiB(64)) {
         ed64_save_type_t type = ed64_ll_get_save_type();
         switch (type) {
             case SAVE_TYPE_SRAM:
@@ -179,6 +146,7 @@ static flashcart_err_t ed64_load_file (char *file_path, uint32_t rom_offset, uin
 
     // FIXME: if the cart is not V3 or X5 or X7, we need probably need to - 128KiB for save compatibility.
     // Or somehow warn that certain ROM's will have corruption due to the address space being used for saves.
+    // EEPROM saves should be unaffected.
 
     if (file_size > (MiB(64) - rom_offset)) {
         f_close(&fil);
@@ -206,7 +174,7 @@ static flashcart_err_t ed64_load_file (char *file_path, uint32_t rom_offset, uin
     return FLASHCART_OK;
 }
 
-static flashcart_err_t ed64_load_save (char *save_path) {
+static flashcart_err_t ed64_load_save (char *save_path) { // from file
     
     FIL fil;
     UINT br;
@@ -216,42 +184,34 @@ static flashcart_err_t ed64_load_save (char *save_path) {
         return FLASHCART_ERR_LOAD;
     }
 
-    size_t save_size = file_get_size(save_path);
-    uint8_t cartsave_data[save_size];
+    size_t save_file_size = file_get_size(strip_sd_prefix(save_path));
+    uint8_t cartsave_data[save_file_size];
 
-    if (f_read(&fil, cartsave_data, save_size, &br) != FR_OK) {
+    if (f_read(&fil, cartsave_data, save_file_size, &br) != FR_OK) {
         f_close(&fil);
         return FLASHCART_ERR_LOAD;
     }
 
-    if (br != save_size) {
-        return FLASHCART_ERR_LOAD;
-    }
-
-    current_state.is_fram_save_type = false;
-
-    ed64_save_type_t type = ed64_ll_get_save_type();
+    ed64_save_type_t type = ed64_ll_get_save_type(); // current_state.is_save_type;
     switch (type) {
         case SAVE_TYPE_EEPROM_4K:
         case SAVE_TYPE_EEPROM_16K:
-            ed64_ll_set_eeprom(cartsave_data, save_size);
+            ed64_ll_set_eeprom(cartsave_data, type);
             break;
         case SAVE_TYPE_SRAM:
         case SAVE_TYPE_SRAM_128K:
-            ed64_ll_set_sram(cartsave_data, save_size);
+            ed64_ll_set_sram(cartsave_data, 0, save_file_size);
             break;
         case SAVE_TYPE_FLASHRAM:
-            ed64_ll_set_fram(cartsave_data, save_size);
-            // a cold and warm boot has no way of seeing save types and most types can be determined by size
-            // this tells the cart to use flash instead of sram 128 since they are the same size
-            current_state.is_fram_save_type = true;
-            ed64_state_save(&current_state);
+            ed64_ll_set_fram(cartsave_data, save_file_size);
+            break;
+        case SAVE_TYPE_DD64_CART_PORT:
             break;
         default:
             break;
     }
 
-
+    current_state.is_save_type = type; // SHOULD HAVE BEEN SET FROM ed64_set_save_type()
     current_state.last_save_path = save_path;
     current_state.is_expecting_save_writeback = true;
     ed64_state_save(&current_state);
@@ -288,6 +248,64 @@ static flashcart_err_t ed64_set_save_type (flashcart_save_type_t save_type) {
     }
 
     ed64_ll_set_save_type(type);
+
+    current_state.is_save_type = type;
+    ed64_state_save(&current_state);
+
+    return FLASHCART_OK;
+}
+
+static flashcart_err_t ed64_pesudo_set_save_writeback (void) {
+    // save the content back to the SD card!
+    FIL fil;
+    UINT bw;
+    uint8_t cartsave_data[KiB(128)];
+
+    // find the path to last save
+    if (
+            file_exists(strip_sd_prefix(current_state.last_save_path))
+            && current_state.is_save_type != SAVE_TYPE_NONE
+            && sys_reset_type() != RESET_COLD
+        ) {
+
+        int save_size = file_get_size(current_state.last_save_path);
+
+        if ((f_open(&fil, strip_sd_prefix(current_state.last_save_path), FA_CREATE_ALWAYS | FA_READ | FA_WRITE)) != FR_OK) {
+            return FLASHCART_ERR_LOAD;
+        }
+
+        switch (current_state.is_save_type) {
+            case SAVE_TYPE_EEPROM_4K:
+            case SAVE_TYPE_EEPROM_16K:
+                 ed64_ll_get_eeprom(cartsave_data, current_state.is_save_type);
+                break;
+            case SAVE_TYPE_SRAM:
+            case SAVE_TYPE_SRAM_128K:
+                ed64_ll_get_sram(cartsave_data, 0, save_size);
+                break;
+            case SAVE_TYPE_FLASHRAM:
+                ed64_ll_get_fram(cartsave_data, save_size);
+                break;
+            case SAVE_TYPE_DD64_CART_PORT:
+                break;
+            default:
+                break;
+        }
+
+        if (f_write(&fil, cartsave_data, save_size, &bw) != FR_OK) {
+            return FLASHCART_ERR_LOAD;
+        }
+
+        if (f_close(&fil) != FR_OK) {
+            return FLASHCART_ERR_LOAD;
+        }
+    }
+
+    // make sure next boot doesn't trigger the check changing its state.
+    current_state.is_expecting_save_writeback = false;
+    current_state.is_save_type = SAVE_TYPE_NONE;
+    current_state.last_save_path = "";
+    ed64_state_save(&current_state);
 
     return FLASHCART_OK;
 }

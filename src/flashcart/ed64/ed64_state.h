@@ -12,7 +12,7 @@ typedef struct {
 /** @brief The reset button was used */
     bool is_expecting_save_writeback;
 /** @brief The last save type was flash ram */
-    bool is_fram_save_type;
+    int is_save_type;
 /** @brief The path to the last loaded ROM */
     char *last_save_path;
 } ed64_pseudo_writeback_t;

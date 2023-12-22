@@ -2,55 +2,53 @@
 #include <libdragon.h>
 #include "utils/utils.h"
 #include "ed64_ll.h"
+#include "../flashcart_utils.h"
 
-//FIXME find a better solution, perferably a libdragon one
-void sleep (unsigned long ms);
 
-void sleep (unsigned long ms) {
-
-    unsigned long current_ms = get_ticks_ms();
-
-    while (get_ticks_ms() - current_ms < ms);
-
-}
+/* ED64 save location base address  */
+#define ED64_SAVE_ADDR_BASE   (0xA8000000)
 
 /* ED64 configuration registers base address  */
 #define ED64_CONFIG_REGS_BASE (0xA8040000)
 
+/* ED64 configuration registers  */
 typedef enum {
-    // REG_CFG = 0,
-    // REG_STATUS = 1,
-    // REG_DMA_LENGTH = 2,
-    // REG_DMA_RAM_ADDR = 3,
-    // REG_MSG = 4,
-    // REG_DMA_CFG = 5,
-    // REG_SPI = 6,
-    // REG_SPI_CFG = 7,
-    // REG_KEY = 8,
-    REG_SAV_CFG = 9,
-    // REG_SEC = 10, /* Sectors?? */
-    // REG_FPGA_VERSION = 11, /* Altera (Intel) MAX */
-    // REG_GPIO = 12,
+    // REG_CFG = 0x00,
+    // REG_STATUS = 0x01,
+    // REG_DMA_LENGTH = 0x02,
+    // REG_DMA_RAM_ADDR = 0x03,
+    // REG_MSG = 0x04,
+    // REG_DMA_CFG = 0x05,
+    // REG_SPI = 0x06,
+    // REG_SPI_CFG = 0x07,
+    // REG_KEY = 0x08,
+    REG_SAV_CFG = 0x09,
+    // REG_SEC = 0x0A, /* Sectors?? */
+    // REG_FPGA_VERSION = 0x0B, //11, /* Altera (Intel) MAX */
+    // REG_GPIO = 0x0C, //12,
 
-} ed64_registers_t;
-
-void pi_initialize (void);
-void pi_dma_wait (void);
-void pi_initialize_sram (void);
-void pi_dma_from_sram (void *dest, unsigned long offset, unsigned long size);
-void pi_dma_to_sram (void* src, unsigned long offset, unsigned long size);
-void ed64_ll_set_sdcard_timing (void);
+} ed64_ci_registers_id_t;
 
 
-#define SAV_EEP_ON 1
-#define SAV_SRM_ON 2
-#define SAV_EEP_SIZE 4
-#define SAV_SRM_SIZE 8
+/* ED64 Device Variant Mask  */
+#define ED64_DEVICE_VARIANT_MASK         (0xF000)
 
-#define SAV_RAM_BANK 128
-#define SAV_RAM_BANK_APPLY 32768
+void set_sram_pi_regs (void);
+
+typedef enum {
+    SAV_EEP_ON_OFF = 0x01,
+    SAV_SRM_ON_OFF = 0x02,
+    SAV_EEP_SMALL_BIG = 0x04,
+    SAV_SRM_SMALL_BIG = 0x08,
+    SAV_RAM_BANK = 128,
+    SAV_RAM_BANK_APPLY = 32768
+} ed64_v_save_register_id_t;
 
 void ed64_ll_reg_write (uint32_t reg, uint32_t data);
+
+uint8_t ed64_ll_sram_bank;
+ed64_save_type_t ed64_ll_save_type;
+
 
 void ed64_ll_reg_write (uint32_t reg, uint32_t data) {
 
@@ -59,9 +57,6 @@ void ed64_ll_reg_write (uint32_t reg, uint32_t data) {
     *(volatile uint32_t *) (ROM_ADDRESS);
 
 }
-
-uint8_t ed64_ll_sram_bank;
-ed64_save_type_t ed64_ll_save_type;
 
 
 ed64_save_type_t ed64_ll_get_save_type (void) {
@@ -73,46 +68,46 @@ ed64_save_type_t ed64_ll_get_save_type (void) {
 void ed64_ll_set_save_type (ed64_save_type_t type) {
 
     uint16_t save_cfg;
-    uint8_t eeprom_on, sram_on, eeprom_size, sram_size, ram_bank;
+    uint8_t is_eeprom, is_sram, is_eeprom_16k, is_sram_128k, using_ram_bank;
     ed64_ll_save_type = type;
-    eeprom_on = 0;
-    sram_on = 0;
-    eeprom_size = 0;
-    sram_size = 0;
-    ram_bank = ed64_ll_sram_bank;
+    is_eeprom = false;
+    is_sram = false;
+    is_eeprom_16k = false;
+    is_sram_128k = false;
+    using_ram_bank = ed64_ll_sram_bank;
 
 
     switch (type) {
         case SAVE_TYPE_EEPROM_16K:
-            eeprom_on = 1;
-            eeprom_size = 1;
+            is_eeprom = true;
+            is_eeprom_16k = true;
             break;
         case SAVE_TYPE_EEPROM_4K:
-            eeprom_on = 1;
+            is_eeprom = true;
             break;
         case SAVE_TYPE_SRAM:
-            sram_on = 1;
+            is_sram = true;
             break;
         case SAVE_TYPE_SRAM_128K:
-            sram_on = 1;
-            sram_size = 1;
+            is_sram = true;
+            is_sram_128k = true;
             break;
         case SAVE_TYPE_FLASHRAM:
-            sram_on = 0;
-            sram_size = 1;
+            is_sram = false;
+            is_sram_128k = true;
             break;
         default:
-            sram_on = 0;
-            sram_size = 0;
-            ram_bank = 1;
+            is_sram = false;
+            is_sram_128k = false;
+            using_ram_bank = 1;
             break;
     }
 
-    if (eeprom_on)save_cfg |= SAV_EEP_ON;
-    if (sram_on)save_cfg |= SAV_SRM_ON;
-    if (eeprom_size)save_cfg |= SAV_EEP_SIZE;
-    if (sram_size)save_cfg |= SAV_SRM_SIZE;
-    if (ram_bank)save_cfg |= SAV_RAM_BANK;
+    if (is_eeprom)save_cfg |= SAV_EEP_ON_OFF;
+    if (is_sram)save_cfg |= SAV_SRM_ON_OFF;
+    if (is_eeprom_16k)save_cfg |= SAV_EEP_SMALL_BIG;
+    if (is_sram_128k)save_cfg |= SAV_SRM_SMALL_BIG;
+    if (using_ram_bank)save_cfg |= SAV_RAM_BANK;
     save_cfg |= SAV_RAM_BANK_APPLY;
 
     ed64_ll_reg_write(REG_SAV_CFG, save_cfg);
@@ -125,49 +120,8 @@ void ed64_ll_set_sram_bank (uint8_t bank) {
 
 }
 
-// FIXME Id like to use libdragon's equivelant for this
-void _data_cache_invalidate_all (void) {
-    asm(
-        "li $8,0x80000000;"
-        "li $9,0x80000000;"
-        "addu $9,$9,0x1FF0;"
-        "cacheloop:;"
-        "cache 1,0($8);"
-        "cache 1,16($8);"
-        "cache 1,32($8);"
-        "cache 1,48($8);"
-        "cache 1,64($8);"
-        "cache 1,80($8);"
-        "cache 1,96($8);"
-        "addu $8,$8,112;"
-        "bne $8,$9,cacheloop;"
-        "cache 1,0($8);"
-    : // no outputs
-    : // no inputs
-    : "$8", "$9" // trashed registers
-    );
-}
-
-
-// register related functions
-
-// FIXME i dont actually think the alt64 names are do what they are saying they are doing
-// a proper rename is in order?
-
-void pi_initialize (void) {
-
-	pi_dma_wait();
-	io_write(PI_STATUS_REG, 0x03);
-
-}
-
-void pi_dma_wait (void) {  
-	while (io_read(PI_STATUS_REG) & (PI_STATUS_IO_BUSY | PI_STATUS_DMA_BUSY));
-
-}
-
-// Inits PI for sram transfer
-void pi_initialize_sram (void) {
+// Inits PI for sram transfers
+void set_sram_pi_regs (void) {
 
 	io_write(PI_BSD_DOM2_LAT_REG, 0x05);
 	io_write(PI_BSD_DOM2_PWD_REG, 0x0C);
@@ -176,74 +130,42 @@ void pi_initialize_sram (void) {
 
 }
 
-void pi_dma_from_sram (void *dest, unsigned long offset, unsigned long size) {
+void ed64_ll_get_sram (uint8_t *buffer, uint32_t address_offset, uint32_t size) {
 
-	io_write(PI_DRAM_ADDR_REG, K1_TO_PHYS(dest));
-	io_write(PI_CART_ADDR_REG, (PI_SAVE_ADDR + offset));
-	 asm volatile ("" : : : "memory");
-	io_write(PI_WR_LEN_REG, (size - 1));
-	 asm volatile ("" : : : "memory");
+    // TODO: potentially set the type so it can be used rather than an offset from the initial address.
 
-}
+    // collect current timings
+    uint32_t initalLatReg = io_read(PI_BSD_DOM2_LAT_REG);
+    uint32_t initalPwdReg = io_read(PI_BSD_DOM2_PWD_REG);
+    uint32_t initalPgsReg = io_read(PI_BSD_DOM2_PGS_REG);
+    uint32_t initalRlsReg = io_read(PI_BSD_DOM2_RLS_REG);
 
-void pi_dma_to_sram (void *src, unsigned long offset, unsigned long size) {
+    // set temporary timings for SRAM
+    set_sram_pi_regs();
 
-	pi_dma_wait();
+    // read data
+    pi_dma_read_data((void*)(ED64_SAVE_ADDR_BASE + address_offset), buffer, size);
 
-	io_write(PI_STATUS_REG, 2);
-	io_write(PI_DRAM_ADDR_REG, K1_TO_PHYS(src));
-	io_write(PI_CART_ADDR_REG, (PI_SAVE_ADDR + offset));
-    _data_cache_invalidate_all();
-	io_write(PI_RD_LEN_REG, (size - 1));
-
-}
-
-void ed64_ll_set_sdcard_timing (void) {
-
-    io_write(PI_BSD_DOM1_LAT_REG, 0x40);
-    io_write(PI_BSD_DOM1_PWD_REG, 0x12);
-    io_write(PI_BSD_DOM1_PGS_REG, 0x07);
-    io_write(PI_BSD_DOM1_RLS_REG, 0x03);
-
-    io_write(PI_BSD_DOM2_LAT_REG, 0x40);
-    io_write(PI_BSD_DOM2_PWD_REG, 0x12);
-    io_write(PI_BSD_DOM2_PGS_REG, 0x07);
-    io_write(PI_BSD_DOM2_RLS_REG, 0x03);
+    // restore inital timings
+    io_write(PI_BSD_DOM2_LAT_REG, initalLatReg);
+    io_write(PI_BSD_DOM2_PWD_REG, initalPwdReg);
+    io_write(PI_BSD_DOM2_PGS_REG, initalPgsReg);
+    io_write(PI_BSD_DOM2_RLS_REG, initalRlsReg);
 
 }
 
+void ed64_ll_get_eeprom (uint8_t *buffer, uint8_t eep_type) {
 
-void ed64_ll_get_sram (uint8_t *buffer, int size) {
+    uint32_t size = eep_type == SAVE_TYPE_EEPROM_16K ? 4 : SAVE_TYPE_EEPROM_4K ? 1 : 0;
 
-    pi_initialize_sram();
+    if (size != 0) {
+        ed64_ll_set_save_type(eep_type);
+        if (eeprom_present()) { // FIXME: does not correctly check type.
 
-    dma_wait();
-
-    pi_initialize();
-
-    sleep(250);
-    
-    // checks if the save isnt large and if so grabs it from the large save area
-    if(size == KiB(32))
-    {
-        pi_dma_from_sram(buffer, 0, size) ;
-    }
-    else
-    {
-        pi_dma_from_sram(buffer, -KiB(64), size) ;
-    }
-
-    dma_wait();
-
-    ed64_ll_set_sdcard_timing();
-
-}
-
-void ed64_ll_get_eeprom (uint8_t *buffer, int size) {
-
-    int blocks=size/8;
-    for( int b = 0; b < blocks; b++ ) {
-        eeprom_read( b, &buffer[b * 8] );
+            for (uint32_t i = 0; i < size; i += 8) {
+                eeprom_read(i / 8, &buffer[i]);
+            }
+        }
     }
 
 }
@@ -252,75 +174,69 @@ void ed64_ll_get_eeprom (uint8_t *buffer, int size) {
 void ed64_ll_get_fram (uint8_t *buffer, int size) {
 
     ed64_ll_set_save_type(SAVE_TYPE_SRAM_128K); //2
-    sleep(512);
-
-    data_cache_hit_writeback_invalidate(buffer,size);
     dma_wait();
-    
-    ed64_ll_get_sram(buffer, size);
 
-    sleep(512);
+    ed64_ll_get_sram(buffer, 0, size);
+    data_cache_hit_writeback_invalidate(buffer, size);
+
+    dma_wait();
     ed64_ll_set_save_type(SAVE_TYPE_FLASHRAM);
 
 }
 
-/*
-sram upload
-*/
 
+void ed64_ll_set_sram (uint8_t *buffer, uint32_t address_offset, int size) {
 
-void ed64_ll_set_sram (uint8_t *buffer, int size) {
+    // collect current timings
+    uint32_t initalLatReg = io_read(PI_BSD_DOM2_LAT_REG);
+    uint32_t initalPwdReg = io_read(PI_BSD_DOM2_PWD_REG);
+    uint32_t initalPgsReg = io_read(PI_BSD_DOM2_PGS_REG);
+    uint32_t initalRlsReg = io_read(PI_BSD_DOM2_RLS_REG);
 
-    pi_dma_wait();
+    // set temporary timings for SRAM
+    set_sram_pi_regs();
 
-    //Timing
-    pi_initialize_sram();
+    // write data
+    pi_dma_write_data(buffer, (void*)(ED64_SAVE_ADDR_BASE + address_offset), size);
 
-    //Readmode
-    pi_initialize();
-
-    data_cache_hit_writeback_invalidate(buffer,size);
-    dma_wait();
-
-    // checks if you are no using a large save and if you are puts it in the large save area
-    if(size == KiB(32))
-    {
-        pi_dma_to_sram(buffer, 0, size) ;
-    }
-    else
-    {
-        pi_dma_to_sram(buffer, -KiB(64), size) ;
-    }
-
-    //Wait
-     pi_dma_wait();
-
-    //Restore evd Timing
-    ed64_ll_set_sdcard_timing();
+    // restore inital timings
+    io_write(PI_BSD_DOM2_LAT_REG, initalLatReg);
+    io_write(PI_BSD_DOM2_PWD_REG, initalPwdReg);
+    io_write(PI_BSD_DOM2_PGS_REG, initalPgsReg);
+    io_write(PI_BSD_DOM2_RLS_REG, initalRlsReg);
 
 }
 
 
-void ed64_ll_set_eeprom (uint8_t *buffer, int size) {
+uint8_t ed64_ll_set_eeprom(uint8_t *buffer, uint8_t eep_type) {
 
-    int blocks=size/8;
-    for( int b = 0; b < blocks; b++ ) {
-        eeprom_write( b, &buffer[b * 8] );
+    uint8_t size = eep_type == SAVE_TYPE_EEPROM_16K ? 4 : SAVE_TYPE_EEPROM_4K ? 1 : 0;
+
+    if (size == 0) { // SAVE_TYPE_NONE
+        return 0;
     }
 
+    ed64_ll_set_save_type(eep_type);
+
+    if (eeprom_present()) { // FIXME: does not correctly check type.
+
+        for (uint32_t i = 0; i < size; i += 8) {
+            eeprom_write(i / 8, &buffer[i]);
+        }
+    }
+
+    return 0;
 }
 
 void ed64_ll_set_fram (uint8_t *buffer, int size) {
 
     ed64_ll_set_save_type(SAVE_TYPE_SRAM_128K);
-    sleep(512);
-
-    data_cache_hit_writeback_invalidate(buffer,size);
     dma_wait();
 
-    ed64_ll_set_sram(buffer, size);
+    ed64_ll_set_sram(buffer, 0, size);
+    data_cache_hit_writeback_invalidate(buffer, size);
 
-    sleep(512);
+    dma_wait();
     ed64_ll_set_save_type(SAVE_TYPE_FLASHRAM);
 
 }
