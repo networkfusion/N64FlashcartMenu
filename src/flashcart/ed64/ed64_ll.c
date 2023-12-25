@@ -5,7 +5,8 @@
 
 
 /* ED64 configuration registers base address  */
-#define ED64_CONFIG_REGS_BASE (0xA8040000)
+// FIXME: this is part of the SRAM address and should not be used (if we are using the SD)
+#define ED64_CONFIG_REGS_BASE (0xA8040000UL)
 
 typedef enum {
     // REG_CFG = 0,
@@ -115,7 +116,7 @@ void ed64_ll_set_sram_bank (uint8_t bank) {
 
 }
 
-// FIXME Id like to use libdragon's equivelant for this
+// FIXME: use libdragon's equivelant for this
 void _data_cache_invalidate_all (void) {
     asm(
         "li $8,0x80000000;"
@@ -169,7 +170,7 @@ void pi_initialize_sram (void) {
 void pi_dma_from_sram (void *dest, unsigned long offset, unsigned long size) {
 
 	io_write(PI_DRAM_ADDR_REG, K1_TO_PHYS(dest));
-	io_write(PI_CART_ADDR_REG, (PI_SAVE_ADDR + offset));
+	io_write(PI_CART_ADDR_REG, (ED64_SAVE_ADDR_BASE + offset));
 	 asm volatile ("" : : : "memory");
 	io_write(PI_WR_LEN_REG, (size - 1));
 	 asm volatile ("" : : : "memory");
@@ -182,7 +183,7 @@ void pi_dma_to_sram (void *src, unsigned long offset, unsigned long size) {
 
 	io_write(PI_STATUS_REG, 2);
 	io_write(PI_DRAM_ADDR_REG, K1_TO_PHYS(src));
-	io_write(PI_CART_ADDR_REG, (PI_SAVE_ADDR + offset));
+	io_write(PI_CART_ADDR_REG, (ED64_SAVE_ADDR_BASE + offset));
     _data_cache_invalidate_all();
 	io_write(PI_RD_LEN_REG, (size - 1));
 

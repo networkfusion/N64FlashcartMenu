@@ -13,31 +13,33 @@
 #include <stdbool.h>
 
 /* ED64 save location base address  */
-#define PI_SAVE_ADDR        0xA8000000
+#define ED64_SAVE_ADDR_BASE (0xA8000000UL)
 
 // FIXME: redefined because its in a .c instead of a .h
-#define PI_BASE_REG		    0x04600000
+#ifndef ED64_PI_BASE_REG
+#define ED64_PI_BASE_REG    (0x04600000UL)
+#endif
 
 ///////////////////////////////////////////////////////
 #define	PI_STATUS_ERROR		0x04
 #define	PI_STATUS_IO_BUSY	0x02
 #define	PI_STATUS_DMA_BUSY	0x01
 
-#define PI_STATUS_REG		(PI_BASE_REG+0x10)
-#define PI_DRAM_ADDR_REG	(PI_BASE_REG+0x00)	/* DRAM address */
-#define PI_CART_ADDR_REG	(PI_BASE_REG+0x04)
-#define PI_RD_LEN_REG		(PI_BASE_REG+0x08)
-#define PI_WR_LEN_REG		(PI_BASE_REG+0x0C)
+#define PI_STATUS_REG		(ED64_PI_BASE_REG+0x10)
+#define PI_DRAM_ADDR_REG	(ED64_PI_BASE_REG+0x00)	/* DRAM address */
+#define PI_CART_ADDR_REG	(ED64_PI_BASE_REG+0x04)
+#define PI_RD_LEN_REG		(ED64_PI_BASE_REG+0x08)
+#define PI_WR_LEN_REG		(ED64_PI_BASE_REG+0x0C)
 
 // FIXME: redefined because its in a .c instead of a .h
-#define PI_BSD_DOM1_LAT_REG     (PI_BASE_REG+0x14)
-#define PI_BSD_DOM1_PWD_REG     (PI_BASE_REG+0x18)
-#define PI_BSD_DOM1_PGS_REG     (PI_BASE_REG+0x1C)
-#define PI_BSD_DOM1_RLS_REG     (PI_BASE_REG+0x20)
-#define PI_BSD_DOM2_LAT_REG     (PI_BASE_REG+0x24)
-#define PI_BSD_DOM2_PWD_REG     (PI_BASE_REG+0x28)
-#define PI_BSD_DOM2_PGS_REG     (PI_BASE_REG+0x2C)
-#define PI_BSD_DOM2_RLS_REG     (PI_BASE_REG+0x30)
+#define PI_BSD_DOM1_LAT_REG     (ED64_PI_BASE_REG+0x14)
+#define PI_BSD_DOM1_PWD_REG     (ED64_PI_BASE_REG+0x18)
+#define PI_BSD_DOM1_PGS_REG     (ED64_PI_BASE_REG+0x1C)
+#define PI_BSD_DOM1_RLS_REG     (ED64_PI_BASE_REG+0x20)
+#define PI_BSD_DOM2_LAT_REG     (ED64_PI_BASE_REG+0x24)
+#define PI_BSD_DOM2_PWD_REG     (ED64_PI_BASE_REG+0x28)
+#define PI_BSD_DOM2_PGS_REG     (ED64_PI_BASE_REG+0x2C)
+#define PI_BSD_DOM2_RLS_REG     (ED64_PI_BASE_REG+0x30)
 ///////////////////////////////////////////////////////
 
 #define	PHYS_TO_K0(x)	((unsigned long)(x)|0x80000000)	/* physical to kseg0 */
@@ -64,7 +66,7 @@ typedef enum {
     SAVE_TYPE_DD64_CART_PORT = 16,
 } ed64_save_type_t;
 
-#define ROM_ADDRESS  (0xB0000000)
+#define ROM_ADDRESS  (0xB0000000UL)
 
 /* Save functions */
 void pi_initialize_sram (void);
