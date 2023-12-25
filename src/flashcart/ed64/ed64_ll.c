@@ -2,6 +2,7 @@
 #include <libdragon.h>
 #include "utils/utils.h"
 #include "ed64_ll.h"
+#include "../flashcart_utils.h"
 
 
 /* ED64 configuration registers base address  */
@@ -217,11 +218,13 @@ void ed64_ll_get_sram (uint8_t *buffer, int size) {
     // checks if the save isnt large and if so grabs it from the large save area
     if(size == KiB(32))
     {
-        pi_dma_from_sram(buffer, 0, size) ;
+        pi_dma_from_sram(buffer, 0, size);
+        //pi_dma_read_data((void*)(ED64_SAVE_ADDR_BASE), buffer, size);
     }
     else
     {
-        pi_dma_from_sram(buffer, -KiB(64), size) ;
+        pi_dma_from_sram(buffer, -KiB(64), size); // Doesn't seem right!
+        //pi_dma_read_data((void*)(ED64_SAVE_ADDR_BASE), buffer, size - KiB(64));
     }
 
     dma_wait();
@@ -276,11 +279,13 @@ void ed64_ll_set_sram (uint8_t *buffer, int size) {
     // checks if you are no using a large save and if you are puts it in the large save area
     if(size == KiB(32))
     {
-        pi_dma_to_sram(buffer, 0, size) ;
+        pi_dma_to_sram(buffer, 0, size);
+        //pi_dma_write_data(buffer, (void*)(ED64_SAVE_ADDR_BASE), size);
     }
     else
     {
-        pi_dma_to_sram(buffer, -KiB(64), size) ;
+        pi_dma_to_sram(buffer, -KiB(64), size); // Doesn't seem right!
+        //pi_dma_write_data(buffer, (void*)(ED64_SAVE_ADDR_BASE, size - KiB(64)));
     }
 
     //Wait
