@@ -40,6 +40,13 @@ size_t file_get_size (char *path) {
     return (size_t) (fno.fsize);
 }
 
+bool file_rename (char *old_path, char *new_path) {
+    if (file_exists(old_path)) {
+        return (f_rename(strip_sd_prefix(old_path),strip_sd_prefix(new_path)) != FR_OK);
+    }
+    return false;
+}
+
 bool file_delete (char *path) {
     if (file_exists(path)) {
         return (f_unlink(strip_sd_prefix(path)) != FR_OK);

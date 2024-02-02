@@ -14,6 +14,7 @@ char *strip_sd_prefix (char *path);
 
 bool file_exists (char *path);
 size_t file_get_size (char *path);
+bool file_rename (char *old_path, char *new_path);
 bool file_delete (char *path);
 bool file_allocate (char *path, size_t size);
 bool file_fill (char *path, uint8_t value);
