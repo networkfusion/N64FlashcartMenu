@@ -82,17 +82,18 @@ cart_load_err_t cart_load_n64_rom_and_save (menu_t *menu, flashcart_progress_cal
     path_ext_replace(path, "sav");
 
     // FIXME: add alternative save extension conversion.
-    if (!file_exists(path)) {
+    if (!file_exists(path_get(path))) {
         // the save does not exist so we should check the alternative extensions
         // if an alternative extension is found, we should rename the file with the "sav" extension
         // this should be a one time operation to rename the file.
 
         path_ext_replace(path, "eep");
-        if (file_exists(path))
+        if (file_exists(path_get(path)))
         {
-            char *new_path = path;
+            path_t *new_path = path_clone(menu->load.rom_path);
             path_ext_replace(new_path, "sav");
-            file_rename(path, new_path);
+            file_rename(path_get(path), path_get(new_path));
+            // file_delete(path_get(path)); // TODO: should we do it, or leave it?!
         }
         //...
 
