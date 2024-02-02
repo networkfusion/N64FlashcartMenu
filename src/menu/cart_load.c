@@ -87,13 +87,12 @@ cart_load_err_t cart_load_n64_rom_and_save (menu_t *menu, flashcart_progress_cal
         // if an alternative extension is found, we should rename the file with the "sav" extension
         // this should be a one time operation to rename the file.
 
-        path_ext_replace(path, "eep");
-        if (file_exists(path_get(path)))
+        path_t *test_path = path_clone(path);
+        path_ext_replace(test_path, "eep");
+        if (file_exists(path_get(test_path)))
         {
-            path_t *new_path = path_clone(menu->load.rom_path);
-            path_ext_replace(new_path, "sav");
-            file_rename(path_get(path), path_get(new_path));
-            // file_delete(path_get(path)); // TODO: should we do it, or leave it?!
+            file_rename(path_get(test_path), path_get(path));
+            // file_delete(path_get(test_path)); // TODO: should we do it, or leave it?!
         }
         //...
 
