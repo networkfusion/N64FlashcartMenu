@@ -7,7 +7,9 @@
 static const char *n64_rom_extensions[] = { "z64", "n64", "v64", "rom", NULL };
 static const char *text_extensions[] = { "txt", NULL };
 static const char *config_extensions[] = { "ini", "cfg", "yml", "yaml", "toml", NULL };
-static const char *save_extensions[] = { "sav", "eep", "eeprom", "sra", "srm", "ram", "fla", "flashram", NULL };
+static const char *save_extensions[] = { "sav", NULL };
+// Could be used if transfered from different flashcarts or emulators:
+static const char *save_extensions_alt[] = { "eep", "eeprom", "sra", "srm", "ram", "fla", "flashram", NULL };
 static const char *patch_extensions[] = { "ips", "aps", "pps", "xdelta", NULL };
 static const char *archive_extensions[] = { "zip", "rar", "7z", "tar", "gz", NULL };
 static const char *image_extensions[] = { "png", "jpg", "gif", NULL };
@@ -28,7 +30,7 @@ static char *format_file_type (char *name, bool is_directory) {
         return " Type: Text file\n";
     } else if (file_has_extensions(name, config_extensions)) {
         return " Type: Config file\n";
-    } else if (file_has_extensions(name, save_extensions)) {
+    } else if (file_has_extensions(name, save_extensions) || file_has_extensions(name, save_extensions_alt)) {
         return " Type: N64 save\n";
     } else if (file_has_extensions(name, patch_extensions)) {
         return " Type: ROM patch\n";

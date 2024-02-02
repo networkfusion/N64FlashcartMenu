@@ -12,7 +12,9 @@
 static const char *rom_extensions[] = { "z64", "n64", "v64", "rom", NULL };
 static const char *disk_extensions[] = { "ndd", NULL };
 static const char *emulator_extensions[] = { "nes", "sfc", "smc", "gb", "gbc", "sms", "gg", "sg", NULL };
-static const char *save_extensions[] = { "sav", NULL }; // TODO: "eep", "sra", "srm", "fla" could be used if transfered from different flashcarts.
+static const char *save_extensions[] = { "sav", NULL };
+// Could be used if transfered from different flashcarts or emulators:
+static const char *save_extensions_alt[] = { "eep", "eeprom", "sra", "srm", "ram", "fla", "flashram", NULL };
 static const char *image_extensions[] = { "png", NULL };
 static const char *text_extensions[] = { "txt", "ini", "yml", "yaml", NULL };
 static const char *music_extensions[] = { "mp3", NULL };
@@ -111,7 +113,7 @@ static bool load_directory (menu_t *menu) {
             entry->type = ENTRY_TYPE_DISK;
         }else if (file_has_extensions(info.fname, emulator_extensions)) {
             entry->type = ENTRY_TYPE_EMULATOR;
-        } else if (file_has_extensions(info.fname, save_extensions)) {
+        } else if (file_has_extensions(info.fname, save_extensions) || file_has_extensions(info.fname, save_extensions_alt)) {
             entry->type = ENTRY_TYPE_SAVE;
         } else if (file_has_extensions(info.fname, image_extensions)) {
             entry->type = ENTRY_TYPE_IMAGE;
