@@ -85,7 +85,9 @@ static void draw (menu_t *menu, surface_t *d) {
         "\n"
         "\n"
         "Controller Pak (1).\n"
+        "Free space: %d blocks"
         "Entries: \n%s",
+        cpak_info.free_space,
         format_entries_info(cpak_info.entries)
     );
 
@@ -94,13 +96,6 @@ static void draw (menu_t *menu, surface_t *d) {
             ALIGN_LEFT, VALIGN_TOP,
             "A: Clone\n"
             "B: Back"
-        );
-        
-        component_actions_bar_text_draw(
-        ALIGN_CENTER, VALIGN_TOP,
-            "\n"
-            "Free space: %d blocks",
-            cpak_info.free_space
         );
 
         component_actions_bar_text_draw(
