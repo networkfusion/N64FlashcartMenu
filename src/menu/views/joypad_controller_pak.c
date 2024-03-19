@@ -2,6 +2,8 @@
 #include "../cpak_handler.h"
 
 static int accessory_is_cpak[4];
+static bool show_message;
+static bool format_message;
 
 static void process (menu_t *menu) {
 
@@ -16,10 +18,30 @@ static void process (menu_t *menu) {
             // TODO: preferably with the time added to the filename so it does not overwrite the existing one!
             cpak_clone_contents_to_file("sd://cpak/cpak_backup.mpk", 0);
         }
+        
+        if (show_message) {
+            show_message = false;
+            format_message = true;
+            menu->next_mode = MENU_MODE_JOYPAD_CPAK;
+        } else if (format_message) {
+            format_message = false;
+            menu->next_mode = MENU_MODE_JOYPAD_CPAK;
+        }
+    }
+
+    if (menu->actions.options) 
+    {
+        show_message = true;
     }
 
     if (menu->actions.back) {
-        menu->next_mode = MENU_MODE_BROWSER;
+        if (show_message) {
+            show_message = false;
+        } else if (format_message) {
+            format_message = false;
+        } else {
+            menu->next_mode = MENU_MODE_BROWSER;
+        }
     }
 }
 
@@ -53,8 +75,19 @@ static void draw (menu_t *menu, surface_t *d) {
             "A: Clone\n"
             "B: Back"
         );
-    }
-    else {
+        
+        component_actions_bar_text_draw(
+        ALIGN_CENTER, VALIGN_TOP,
+            "\n"
+            "Free space: %d blocks",
+            get_mempak_free_space(0)
+        );
+
+        component_actions_bar_text_draw(
+            ALIGN_RIGHT, VALIGN_TOP,
+            "R: Format"
+        );
+    } else {
         component_actions_bar_text_draw(
             ALIGN_LEFT, VALIGN_TOP,
             "\n"
@@ -62,11 +95,28 @@ static void draw (menu_t *menu, surface_t *d) {
         );
     }
 
+    if (show_message) {
+        component_messagebox_draw(
+            "Do you want to format?\n\n"
+            "A: Yes, B: Back"
+        );
+    } else if (format_message){
+        if (format_mempak(0))
+        {
+            component_messagebox_draw("Error formatting Controller pak!\n\n" "A or B: OK");
+        }
+        else
+        {   
+            component_messagebox_draw("Controller pak formatted!\n\n" "A or B: OK");
+        }
+    }
+
     rdpq_detach_show();
 }
 
 void view_joypad_controller_pak_init (menu_t *menu){
-    // Nothing to initialize (yet)
+    show_message = false;
+    format_message = false;
 }
 
 void view_joypad_controller_pak_display (menu_t *menu, surface_t *display) {
