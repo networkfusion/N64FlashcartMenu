@@ -2,10 +2,9 @@
 #include "../cpak_handler.h"
 
 static int accessory_is_cpak[4];
+static cpak_info_t cpak_info;
 static bool show_message;
 static bool format_message;
-
-static cpak_info_t cpak_info;
 
 static char *format_entries_info(entry_structure_t *entries) {
     // for (int j = 0; j < 16; j++)
