@@ -5,12 +5,31 @@ static int accessory_is_cpak[4];
 static bool show_message;
 static bool format_message;
 
+static cpak_info_t cpak_info;
+
+static char *format_entries_info(entry_structure_t *entries) {
+    // for (int j = 0; j < 16; j++)
+    // {
+    //     if (entries[j].valid)
+    //     {
+    //         sprintf(buffer + strlen(buffer), "%s - %d blocks\n", entries[j].name, entries[j].blocks);
+    //     }
+    //     else
+    //     {
+    //         sprintf(buffer + strlen(buffer), "(EMPTY)\n");
+    //     }
+    // }
+    return "  unknown.";
+}
+
 static void process (menu_t *menu) {
 
     // check which paks are available
     JOYPAD_PORT_FOREACH (port) {
         accessory_is_cpak[port] = joypad_get_accessory_type(port) == JOYPAD_ACCESSORY_TYPE_CONTROLLER_PAK;
     }
+
+    cpak_info_load(0, &cpak_info);
 
     if (menu->actions.enter) {
         // TODO: handle all ports
@@ -65,8 +84,9 @@ static void draw (menu_t *menu, surface_t *d) {
         ALIGN_LEFT, VALIGN_TOP,
         "\n"
         "\n"
-        "Clone Controller Pak (1) to SD Card.\n"
-        "If it is available.\n"
+        "Controller Pak (1).\n"
+        "Entries: \n%s",
+        format_entries_info(cpak_info.entries)
     );
 
     if (accessory_is_cpak[0]) {
@@ -80,7 +100,7 @@ static void draw (menu_t *menu, surface_t *d) {
         ALIGN_CENTER, VALIGN_TOP,
             "\n"
             "Free space: %d blocks",
-            get_mempak_free_space(0)
+            cpak_info.free_space
         );
 
         component_actions_bar_text_draw(
