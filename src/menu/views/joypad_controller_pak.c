@@ -21,6 +21,7 @@ static char *format_entries_info(entry_structure_t *entries) {
 
 static bool show_message;
 static bool format_message;
+
 static void process (menu_t *menu) {
 
     // check which paks are available
