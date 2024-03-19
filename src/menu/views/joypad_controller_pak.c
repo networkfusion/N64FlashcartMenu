@@ -3,6 +3,8 @@
 
 static int accessory_is_cpak[4];
 static cpak_info_t cpak_info;
+static bool show_message;
+static bool format_message;
 
 static char *format_entries_info(entry_structure_t *entries) {
     // for (int j = 0; j < 16; j++)
@@ -19,8 +21,6 @@ static char *format_entries_info(entry_structure_t *entries) {
     return "  unknown.";
 }
 
-static bool show_message;
-static bool format_message;
 static void process (menu_t *menu) {
 
     // check which paks are available
