@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.5"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>N64FlashcartMenu: match_t.fields.__unnamed15__ Struct Reference</title>
+<title>N64FlashcartMenu: cheats.h Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -67,56 +67,29 @@ $(function() {
 </div>
 </div>
 
+<div id="nav-path" class="navpath">
+  <ul>
+<li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="dir_52780cb445d9f0b97a98e8aabec4d968.html">boot</a></li>  </ul>
+</div>
 </div><!-- top -->
 <div class="header">
-  <div class="summary">
-<a href="#pub-attribs">Data Fields</a>  </div>
-  <div class="headertitle"><div class="title">match_t.fields.__unnamed15__ Struct Reference</div></div>
+  <div class="headertitle"><div class="title">cheats.h</div></div>
 </div><!--header-->
 <div class="contents">
-<table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
-Data Fields</h2></td></tr>
-<tr class="memitem:ab80bb7740288fda1f201890375a60c8f"><td class="memItemLeft" align="right" valign="top"><a id="ab80bb7740288fda1f201890375a60c8f" name="ab80bb7740288fda1f201890375a60c8f"></a>
-const char *&#160;</td><td class="memItemRight" valign="bottom"><b>id</b></td></tr>
-<tr class="separator:ab80bb7740288fda1f201890375a60c8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2af72f100c356273d46284f6fd1dfc08"><td class="memItemLeft" align="right" valign="top"><a id="a2af72f100c356273d46284f6fd1dfc08" name="a2af72f100c356273d46284f6fd1dfc08"></a>
-uint8_t&#160;</td><td class="memItemRight" valign="bottom"><b>version</b></td></tr>
-<tr class="separator:a2af72f100c356273d46284f6fd1dfc08"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table>
-<h2 class="groupheader">Field Documentation</h2>
-<a id="ab80bb7740288fda1f201890375a60c8f" name="ab80bb7740288fda1f201890375a60c8f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab80bb7740288fda1f201890375a60c8f">&#9670;&#160;</a></span>id</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a2af72f100c356273d46284f6fd1dfc08" name="a2af72f100c356273d46284f6fd1dfc08"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2af72f100c356273d46284f6fd1dfc08">&#9670;&#160;</a></span>version</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<hr/>The documentation for this struct was generated from the following files:</div><!-- contents -->
+<div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span><span class="preprocessor">#ifndef CHEATS_H__</span></div>
+<div class="line"><a id="l00002" name="l00002"></a><span class="lineno">    2</span><span class="preprocessor">#define CHEATS_H__</span></div>
+<div class="line"><a id="l00003" name="l00003"></a><span class="lineno">    3</span> </div>
+<div class="line"><a id="l00004" name="l00004"></a><span class="lineno">    4</span><span class="preprocessor">#include &lt;stdint.h&gt;</span></div>
+<div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span> </div>
+<div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span><span class="preprocessor">#include &quot;cic.h&quot;</span></div>
+<div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span> </div>
+<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="keywordtype">bool</span> cheats_install (cic_type_t cic_type, uint32_t *cheat_list);</div>
+<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span> </div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#endif</span></div>
+</div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Apr 29 2024 22:21:07 for N64FlashcartMenu by&#160;<a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.5
+Generated on Sun May 5 2024 14:17:03 for N64FlashcartMenu by&#160;<a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.5
 </small></address>
 </body>
 </html>
