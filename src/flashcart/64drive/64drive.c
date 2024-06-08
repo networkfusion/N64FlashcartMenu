@@ -75,6 +75,7 @@ static bool d64_has_feature (flashcart_features_t feature) {
         case FLASHCART_FEATURE_64DD: return false;
         case FLASHCART_FEATURE_RTC: return true;
         case FLASHCART_FEATURE_USB: return true;
+        case FLASHCART_FEATURE_AUTO_CIC: return true;
         default: return false;
     }
 }
