@@ -1,3 +1,7 @@
+// #include <stdio.h>
+// #include <malloc.h>
+// #include <string.h>
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -28,7 +32,91 @@ typedef enum {
 /* ED64 ROM location base address  */
 #define ROM_ADDRESS  (0xB0000000)
 
+/* Test FPGA */
+static unsigned char ed64x_test_fpga (void) {
+
+    unsigned char resp = 0;
+
+    BiBootCfgSet(0x10);
+    if (!BiBootCfgGet(0x10)) {resp = 1;}
+    BiBootCfgClr(0x10);
+    if (BiBootCfgGet(0x10)) {resp = 1;}
+
+    return resp;
+}
+
+/* Test SDRAM */
+static unsigned char ed64x_test_sdram (void) {
+
+    unsigned long i;
+    unsigned short buff[0x10000];
+
+    for (i = 0; i < 0x10000; i++) {
+        buff[i] = i;
+    }
+    BiCartRomWr(buff, 0, 0x20000);
+    BiCartRomRd(buff, 0, 0x20000);
+    for (i = 0; i < 0x10000; i++) {
+        if (buff[i] != i) return 1;
+    }
+
+    return 0;
+}
+
 static flashcart_err_t ed64x_init (void) {
+
+    assertf(false, "Hello from ed64x");
+
+    // unsigned short cart_serial_number;
+    // unsigned char buff[0x40];
+
+    unsigned char mcn_wr_response = 0;
+    unsigned char fpga_test_response = 0;
+    unsigned char sdram_test_response = 0;
+
+    // extern unsigned char mcn_data[];
+    // extern unsigned long mcn_data_len;
+
+    char *mcn_path = "rom:/firmware/ed64x/mcn_data.rbf";
+    //char *iom_path = "rom:/firmware/ed64x/iom_data.rbf";
+    
+    bi_init();
+    // BiBootRomRd(buff, 0x3FFC0, 0x40);
+    // cart_serial_number = (short)buff[10] << 8 | buff[11];
+
+    // if (file_exists(mcn_path)) {
+        // FIXME: load the content of the mcn_path into the array and set its length!
+        // FILE *fp = fopen(mcn_path, "r");
+        unsigned long mcn_data_len = 122156; // filesize(fp); // should be settable for future ... dfs_size(fh);
+        unsigned char mcn_data[mcn_data_len];
+        // fread(mcn_data, 1, mcn_data_len, fp);
+	    // fclose(fp);
+        int fh_mcn = dfs_open(mcn_path);
+        dfs_read(&mcn_data, 1, sizeof(mcn_data), fh_mcn);
+        dfs_close(fh_mcn);
+        
+        if (!BiBootCfgGet(BI_BCFG_BOOTMOD)) {
+            mcn_wr_response = BiMCNWr(mcn_data, sizeof(mcn_data));
+            if (mcn_wr_response) {return mcn_wr_response;}
+            bi_init(); // reload after fw change
+        }
+
+    // }
+
+    // if (file_exists(iom_path)) {
+        // FIXME: we probably need to handle the iom data here as well.
+        // unsigned long iom_data_len = 32220; // should be settable for future ... dfs_size(fh2);
+        // unsigned char iom_data[iom_data_len];
+        // int fh_iom = dfs_open(iom_path);
+        // dfs_read(&iom_data, 1, sizeof(iom_data), fh_iom);
+        // dfs_close(fh_iom);
+        // unsigned char iom_wr_response = BiIOMWr(iom_data, sizeof(iom_data));
+        //bi_init(); // reload after fw change
+    // }
+
+    sdram_test_response = ed64x_test_sdram();
+    fpga_test_response = ed64x_test_fpga();
+    if (sdram_test_response || fpga_test_response) { return FLASHCART_ERR_OUTDATED; } //{return 0x55;} //FIXME: is this the correct error???
 
     return FLASHCART_OK;
 }
