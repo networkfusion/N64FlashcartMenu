@@ -28,9 +28,9 @@ typedef enum {
 } ed64x_device_variant_t;
 
 /* ED64 save location base address  */
-#define SRAM_ADDRESS (0xA8000000)
+#define SRAM_ADDRESS BI_RAM_ADDR
 /* ED64 ROM location base address  */
-#define ROM_ADDRESS  (0xB0000000)
+#define ROM_ADDRESS  BI_ROM_ADDR
 
 /* Test FPGA */
 static unsigned char ed64x_test_fpga (void) {
@@ -112,7 +112,7 @@ static flashcart_err_t ed64x_init (void) {
 
     //     unsigned char iom_wr_response = BiIOMWr(iom_data, sizeof(iom_data));
     //     if (iom_wr_response) {assertf(false, "iom load ed64x fail");}
-    //     bi_init(); // reload after fw change
+    //     //bi_init(); // reload after fw change
     // }
 
     sdram_test_response = ed64x_test_sdram();
