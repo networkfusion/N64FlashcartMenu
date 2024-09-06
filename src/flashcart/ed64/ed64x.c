@@ -65,8 +65,6 @@ static unsigned char ed64x_test_sdram (void) {
 
 static flashcart_err_t ed64x_init (void) {
 
-    assertf(false, "Hello from ed64x");
-
     // unsigned short cart_serial_number;
     // unsigned char buff[0x40];
 
@@ -78,45 +76,48 @@ static flashcart_err_t ed64x_init (void) {
     // extern unsigned long mcn_data_len;
 
     char *mcn_path = "rom:/firmware/ed64x/mcn_data.rbf";
-    //char *iom_path = "rom:/firmware/ed64x/iom_data.rbf";
+    char *iom_path = "rom:/firmware/ed64x/iom_data.rbf";
     
     bi_init();
     // BiBootRomRd(buff, 0x3FFC0, 0x40);
     // cart_serial_number = (short)buff[10] << 8 | buff[11];
 
-    // if (file_exists(mcn_path)) {
+    if (file_exists(mcn_path)) {
         // FIXME: load the content of the mcn_path into the array and set its length!
-        // FILE *fp = fopen(mcn_path, "r");
+        
         unsigned long mcn_data_len = 122156; // filesize(fp); // should be settable for future ... dfs_size(fh);
         unsigned char mcn_data[mcn_data_len];
-        // fread(mcn_data, 1, mcn_data_len, fp);
-	    // fclose(fp);
-        int fh_mcn = dfs_open(mcn_path);
-        dfs_read(&mcn_data, 1, sizeof(mcn_data), fh_mcn);
-        dfs_close(fh_mcn);
+        
+        FILE *fp = fopen(mcn_path, "r");
+        fread(&mcn_data, 1, mcn_data_len, fp);
+	    fclose(fp);
         
         if (!BiBootCfgGet(BI_BCFG_BOOTMOD)) {
             mcn_wr_response = BiMCNWr(mcn_data, sizeof(mcn_data));
-            if (mcn_wr_response) {return mcn_wr_response;}
+            if (mcn_wr_response) {assertf(false, "mcn load ed64x fail");} //return mcn_wr_response;}
             bi_init(); // reload after fw change
         }
 
-    // }
+    }
+
+    // assertf(false, "mcn load ed64x");
 
     // if (file_exists(iom_path)) {
-        // FIXME: we probably need to handle the iom data here as well.
-        // unsigned long iom_data_len = 32220; // should be settable for future ... dfs_size(fh2);
-        // unsigned char iom_data[iom_data_len];
-        // int fh_iom = dfs_open(iom_path);
-        // dfs_read(&iom_data, 1, sizeof(iom_data), fh_iom);
-        // dfs_close(fh_iom);
-        // unsigned char iom_wr_response = BiIOMWr(iom_data, sizeof(iom_data));
-        //bi_init(); // reload after fw change
+    //     // FIXME: we probably need to handle the iom data here as well.
+    //     unsigned long iom_data_len = 32220; // should be settable for future ... dfs_size(fh2);
+    //     unsigned char iom_data[iom_data_len];
+    //     FILE *fp = fopen(iom_path, "r");
+    //     fread(&iom_data, 1, iom_data_len, fp);
+	//     fclose(fp);
+
+    //     unsigned char iom_wr_response = BiIOMWr(iom_data, sizeof(iom_data));
+    //     if (iom_wr_response) {assertf(false, "iom load ed64x fail");}
+    //     bi_init(); // reload after fw change
     // }
 
     sdram_test_response = ed64x_test_sdram();
     fpga_test_response = ed64x_test_fpga();
-    if (sdram_test_response || fpga_test_response) { return FLASHCART_ERR_OUTDATED; } //{return 0x55;} //FIXME: is this the correct error???
+    if (sdram_test_response || fpga_test_response) { assertf(false, "fpga ed64x fail"); } //{return 0x55;} //FIXME: is this the correct error???
 
     return FLASHCART_OK;
 }
