@@ -806,8 +806,8 @@ static void load_rom_info_from_file (path_t *path, rom_info_t *rom_info) {
     rom_info->boot_override.tv = false;
 
     if (ini) {
-        
-        const char *rom_description = mini_get_string(ini, "metadata", "description", "None.\n\n\n\n\n\n\n");
+
+        const char *rom_description = mini_get_string(ini, "metadata", "description", "");
         memcpy(rom_info->metadata.description , rom_description, sizeof(rom_info->metadata.description));
 
         rom_info->boot_override.cic_type = mini_get_int(ini, "custom_boot", "cic_type", ROM_CIC_TYPE_AUTOMATIC);
@@ -824,6 +824,9 @@ static void load_rom_info_from_file (path_t *path, rom_info_t *rom_info) {
         if (rom_info->boot_override.tv_type != ROM_TV_TYPE_AUTOMATIC) {
             rom_info->boot_override.tv = true;
         }
+
+        rom_info->settings.cheats_enabled = mini_get_bool(ini, NULL, "cheats_enabled", false);
+        rom_info->settings.patches_enabled = mini_get_bool(ini, NULL, "patches_enabled", false);
 
         mini_free(ini);
     }
