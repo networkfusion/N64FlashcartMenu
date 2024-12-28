@@ -28,6 +28,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build N64FlashcartMenu ROM
+        if: github.ref == 'refs/heads/main'
         uses: devcontainers/ci@v0.3
         with:
           imageName: ghcr.io/polprzewodnikowy/n64flashcartmenu-devcontainer
@@ -38,6 +39,30 @@ jobs:
             make all -j
         env:
           FLAGS: -DNDEBUG
+
+      - name: Build N64FlashcartMenu pre-release ROM
+        if: github.ref == 'refs/heads/develop'
+        uses: devcontainers/ci@v0.3
+        with:
+          imageName: ghcr.io/polprzewodnikowy/n64flashcartmenu-devcontainer-develop
+          cacheFrom: ghcr.io/polprzewodnikowy/n64flashcartmenu-devcontainer-develop
+          push: ${{ github.repository_owner == 'Polprzewodnikowy' && 'filter' || 'never' }}
+          runCmd: |
+            make all -j
+        env:
+          FLAGS: -DNDEBUG -DBETA_SETTINGS
+
+      - name: Build N64FlashcartMenu Debug ROM
+        if: github.ref == 'refs/heads/debug'
+        uses: devcontainers/ci@v0.3
+        with:
+          imageName: ghcr.io/polprzewodnikowy/n64flashcartmenu-devcontainer-develop
+          cacheFrom: ghcr.io/polprzewodnikowy/n64flashcartmenu-devcontainer-develop
+          push: 'never'
+          runCmd: |
+            make all -j
+        env:
+          FLAGS: -DDEBUG -DBETA_SETTINGS
 
       - name: Upload artifact (Standard ROM)
         uses: actions/upload-artifact@v4
