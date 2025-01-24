@@ -6,7 +6,7 @@
 #include <string.h>
 #include "utils/fs.h"
 #include "../bookkeeping.h"
-#include "../cheat_load.h"
+#include "../cheat_file_load.h"
 
 static bool show_extra_info_message = false;
 static component_boxart_t *boxart;
@@ -127,7 +127,7 @@ static inline const char *format_boolean_type (bool bool_value) {
 
 static void set_cic_type (menu_t *menu, void *arg) {
     rom_cic_type_t cic_type = (rom_cic_type_t) (arg);
-    rom_err_t err = rom_info_override_cic_type(menu->load.rom_path, &menu->load.rom_info, cic_type);
+    rom_err_t err = rom_info_override_file_cic_type(menu->load.rom_path, &menu->load.rom_info, cic_type);
     if (err != ROM_OK) {
         menu_show_error(menu, convert_error_message(err));
     }
@@ -136,7 +136,7 @@ static void set_cic_type (menu_t *menu, void *arg) {
 
 static void set_save_type (menu_t *menu, void *arg) {
     rom_save_type_t save_type = (rom_save_type_t) (arg);
-    rom_err_t err = rom_info_override_save_type(menu->load.rom_path, &menu->load.rom_info, save_type);
+    rom_err_t err = rom_info_override_file_save_type(menu->load.rom_path, &menu->load.rom_info, save_type);
     if (err != ROM_OK) {
         menu_show_error(menu, convert_error_message(err));
     }
@@ -145,7 +145,7 @@ static void set_save_type (menu_t *menu, void *arg) {
 
 static void set_tv_type (menu_t *menu, void *arg) {
     rom_tv_type_t tv_type = (rom_tv_type_t) (arg);
-    rom_err_t err = rom_info_override_tv_type(menu->load.rom_path, &menu->load.rom_info, tv_type);
+    rom_err_t err = rom_info_override_file_set_tv_type(menu->load.rom_path, &menu->load.rom_info, tv_type);
     if (err != ROM_OK) {
         menu_show_error(menu, convert_error_message(err));
     }
@@ -170,9 +170,9 @@ static void add_favorite (menu_t *menu, void *arg) {
 static void set_cheat_option(menu_t *menu, void *arg) {
     bool enabled = (bool)arg;
     if (enabled == true) {
-        cheat_load_err_t err = load_cheats(menu);
+        cheat_file_load_err_t err = cheat_file_load_cheats(menu);
         if (err != CHEAT_LOAD_OK) {
-            menu_show_error(menu, cheat_load_convert_error_message(err));
+            menu_show_error(menu, cheat_file_load_convert_error_message(err));
         }
     }
     if (enabled == false) {
@@ -180,7 +180,7 @@ static void set_cheat_option(menu_t *menu, void *arg) {
             free(menu->boot_params->cheat_list);
         }
     }
-    rom_setting_set_cheats(menu->load.rom_path, &menu->load.rom_info, enabled);
+    //rom_info_override_file_set_cheats_enabled(menu->load.rom_path, &menu->load.rom_info, enabled);
     menu->browser.reload = true;
 }
 
@@ -391,6 +391,15 @@ static void load (menu_t *menu) {
         case ROM_TV_TYPE_NTSC: menu->boot_params->tv_type = BOOT_TV_TYPE_NTSC; break;
         case ROM_TV_TYPE_MPAL: menu->boot_params->tv_type = BOOT_TV_TYPE_MPAL; break;
         default: menu->boot_params->tv_type = BOOT_TV_TYPE_PASSTHROUGH; break;
+    }
+    if (menu->load.rom_info.settings.cheats_enabled) {
+        cheat_file_load_err_t err = cheat_file_load_cheats(menu);
+        if (err != CHEAT_LOAD_OK) {
+            menu_show_error(menu, cheat_file_load_convert_error_message(err));
+            menu->boot_params->cheat_list = NULL;
+        }
+    } else {
+        menu->boot_params->cheat_list = NULL;
     }
 }
 

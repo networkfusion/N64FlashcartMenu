@@ -1,10 +1,10 @@
 /**
  * @brief Cheat file support
  * 
- * @authors Mena and XLuma
+ * @authors Mena, XLuma and Robin Jones (NetworkFusion).
  */
 
-#include "cheat_load.h"
+#include "cheat_file_load.h"
 #include "../utils/fs.h"
 
 #include <string.h>
@@ -13,8 +13,21 @@
 #include <sys/stat.h>
 #include "views/views.h"
 
+/** @brief Cheat File Entry Structure. */
+typedef struct  __attribute__((packed)) {
+    uint32_t code;
+    uint32_t value;
+    bool is_enabled;
+    char description[];
+} cheat_file_entry_t;
 
-char *cheat_load_convert_error_message (cheat_load_err_t err) {
+// static const char *cheat_file_extensions[] = { "cht", NULL };
+
+// static const char *line_comment_characters[] = { "#", "$", NULL };
+// static const char *cheat_description_characters[] = { ";", NULL };
+
+
+char *cheat_file_load_convert_error_message (cheat_file_load_err_t err) {
     switch (err) {
         case CHEAT_LOAD_OK: return "Cheats loaded OK";
         case CHEAT_LOAD_ERR_NO_CHEAT_FILE: return "No cheat file found";
@@ -24,7 +37,7 @@ char *cheat_load_convert_error_message (cheat_load_err_t err) {
         case CHEAT_LOAD_ERR_MALLOC_FAILED: return "Error occured allocating memory for file";
         case CHEAT_LOAD_ERR_READ_FAILED: return "Error occured during file read";
         case CHEAT_LOAD_ERR_CLOSE_FAILED: return "Error occured during file close";
-        default: return "Unknown error [CHEAT_LOAD]";
+        default: return "Unknown error [CHEAT__FILE_LOAD]";
     }
 }
 
@@ -114,7 +127,7 @@ char **ft_split (char const *s, char c) {
     return (tab);
 }
 
-cheat_load_err_t load_cheats (menu_t *menu) {
+cheat_file_load_err_t cheat_file_load_cheats (menu_t *menu) {
     FILE *cheatsFile;
     struct stat st;
     size_t cheatsLength;

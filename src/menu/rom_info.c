@@ -857,8 +857,6 @@ static rom_err_t save_override (path_t *path, const char *id, int value, int def
 
     if (value == default_value) {
         mini_err = mini_delete_value(rom_info_ini, "custom_boot", id);
-    } else if (strncmp(id, "cheat_codes", strlen("cheat_codes"))) {
-        mini_err = mini_set_bool(rom_info_ini, NULL, id, value);
     } else {
         mini_err = mini_set_int(rom_info_ini, "custom_boot", id, value);
     }
@@ -927,7 +925,7 @@ bool rom_info_get_cic_seed (rom_info_t *rom_info, uint8_t *seed) {
     return (!rom_info->boot_override.cic);
 }
 
-rom_err_t rom_info_override_cic_type (path_t *path, rom_info_t *rom_info, rom_cic_type_t cic_type) {
+rom_err_t rom_info_override_file_cic_type (path_t *path, rom_info_t *rom_info, rom_cic_type_t cic_type) {
     rom_info->boot_override.cic = (cic_type != ROM_CIC_TYPE_AUTOMATIC);
     rom_info->boot_override.cic_type = cic_type;
 
@@ -942,7 +940,7 @@ rom_save_type_t rom_info_get_save_type (rom_info_t *rom_info) {
     }
 }
 
-rom_err_t rom_info_override_save_type (path_t *path, rom_info_t *rom_info, rom_save_type_t save_type) {
+rom_err_t rom_info_override_file_save_type (path_t *path, rom_info_t *rom_info, rom_save_type_t save_type) {
     rom_info->boot_override.save = (save_type != SAVE_TYPE_AUTOMATIC);
     rom_info->boot_override.save_type = save_type;
 
@@ -957,17 +955,22 @@ rom_tv_type_t rom_info_get_tv_type (rom_info_t *rom_info) {
     }
 }
 
-rom_err_t rom_info_override_tv_type (path_t *path, rom_info_t *rom_info, rom_tv_type_t tv_type) {
+rom_err_t rom_info_override_file_set_tv_type (path_t *path, rom_info_t *rom_info, rom_tv_type_t tv_type) {
     rom_info->boot_override.tv = (tv_type != ROM_TV_TYPE_AUTOMATIC);
     rom_info->boot_override.tv_type = tv_type;
 
     return save_override(path, "tv_type", rom_info->boot_override.tv_type, ROM_TV_TYPE_AUTOMATIC);
 }
 
-rom_err_t rom_setting_set_cheats (path_t *path, rom_info_t *rom_info, bool enabled) {
-    rom_info->settings.cheats_enabled = enabled;
-    return save_override(path, "cheat_codes", enabled, false);
-}
+// rom_err_t rom_info_override_file_set_cheats_enabled (path_t *path, rom_info_t *rom_info, bool enabled) {
+//     rom_info->settings.cheats_enabled = enabled;
+//     return save_override(path, "cheats_enabled", enabled, false);
+// }
+
+// rom_err_t rom_info_override_file_set_patches_enabled (path_t *path, rom_info_t *rom_info, bool enabled) {
+//     rom_info->settings.patches_enabled = enabled;
+//     return save_override(path, "patches_enabled", enabled, false);
+// }
 
 rom_err_t rom_info_load (path_t *path, rom_info_t *rom_info) {
     FILE *f;
