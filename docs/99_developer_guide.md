@@ -61,13 +61,7 @@ Once merged, they can be viewed [here](https://polprzewodnikowy.github.io/N64Fla
 ### Test generated docs in the dev-container
 Testing the documentation locally allows you to preview changes and ensure everything renders correctly before submitting your changes.
 
-Install Prerequisites:
-```bash
-apt-get install ruby-full build-essential zlib1g-dev
-gem install jekyll bundler
-```
-
-You can then serve the webpage:
+You can serve the webpage using:
 ```bash
 cd output/docs && jekyll serve
 ```
