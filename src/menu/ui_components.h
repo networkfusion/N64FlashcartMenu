@@ -19,12 +19,8 @@
 typedef enum {
     IMAGE_BOXART_FRONT,    /**< Boxart image from the front */
     IMAGE_BOXART_BACK,     /**< Boxart image from the back */
-    IMAGE_BOXART_TOP,      /**< Boxart image from the top */
-    IMAGE_BOXART_BOTTOM,   /**< Boxart image from the bottom */
-    IMAGE_BOXART_LEFT,     /**< Boxart image from the left side */
-    IMAGE_BOXART_RIGHT,    /**< Boxart image from the right side */
+    IMAGE_BOXART_SPINE,    /**< Boxart image spine */
     IMAGE_GAMEPAK_FRONT,   /**< GamePak image from the front */
-    IMAGE_GAMEPAK_BACK,    /**< GamePak image from the back */
     IMAGE_THUMBNAIL,       /**< File image thumbnail */
     IMAGE_TYPE_END         /**< List end marker */
 } file_image_type_t;

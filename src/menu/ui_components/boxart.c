@@ -12,7 +12,7 @@
 #include "constants.h"
 #include "utils/fs.h"
 
-#define BOXART_DIRECTORY    "menu/boxart"
+#define BOXART_DIRECTORY    "menu/metadata"
 
 /**
  * @brief PNG decoder callback function.
@@ -56,29 +56,23 @@ component_boxart_t *ui_components_boxart_init (const char *storage_prefix, char 
 
     if (directory_exists(path_get(path))) {
         switch (current_image_view) {
-            case IMAGE_GAMEPAK_FRONT:
-                path_push(path, "gamepak_front.png");
-                break;
-            case IMAGE_GAMEPAK_BACK:
-                path_push(path, "gamepak_back.png");
+            case IMAGE_BOXART_FRONT:
+                path_push(path, "boxart_front.png");
                 break;
             case IMAGE_BOXART_BACK:
                 path_push(path, "boxart_back.png");
                 break;
-            case IMAGE_BOXART_LEFT:
-                path_push(path, "boxart_left.png");
+            case IMAGE_BOXART_SPINE:
+                path_push(path, "boxart_spine.png");
                 break;
-            case IMAGE_BOXART_RIGHT:
-                path_push(path, "boxart_right.png");
+            case IMAGE_GAMEPAK_FRONT:
+                path_push(path, "gamepak_front.png");
                 break;
-            case IMAGE_BOXART_BOTTOM:
-                path_push(path, "boxart_bottom.png");
-                break;
-            case IMAGE_BOXART_TOP:
-                path_push(path, "boxart_top.png");
+            case IMAGE_THUMBNAIL:
+                path_push(path, "thumbnail.png");
                 break;
             default:
-                path_push(path, "boxart_front.png");
+                path_push(path, "thumbnail.png");
                 break;
         }
 
