@@ -140,23 +140,26 @@ char *flashcart_convert_error_message (flashcart_err_t err) {
 /**
  * @brief Initialize the flashcart.
  * 
- * @param storage_prefix Pointer to the storage prefix.
+ * @param primary_storage_prefix Pointer to the primary storage prefix.
+ * @param dfs_storage_prefix Pointer to the DFS storage prefix.
  * @return flashcart_err_t Error code.
  */
-flashcart_err_t flashcart_init (const char **storage_prefix) {
+flashcart_err_t flashcart_init (const char **primary_storage_prefix, const char **dfs_storage_prefix) {
     flashcart_err_t err;
+
+    *dfs_storage_prefix = "rom:/";
 
     if (sys_bbplayer()) {
         // TODO: Add iQue callbacks
-        *storage_prefix = "bbfs:/";
+        *primary_storage_prefix = "bbfs:/";
         if (bbfs_init()) {
             return FLASHCART_ERR_BBFS;
         }
         return FLASHCART_OK;
     }
 
-    *storage_prefix = "sd:/";
-    bool sd_card_initialized = debug_init_sdfs(*storage_prefix, -1);
+    *primary_storage_prefix = "sd:/";
+    bool sd_card_initialized = debug_init_sdfs(*primary_storage_prefix, -1);
 
     switch (cart_type) {
         case CART_CI:   // 64drive
@@ -176,7 +179,7 @@ flashcart_err_t flashcart_init (const char **storage_prefix) {
             break;
 
         default:        // Probably emulator
-            *storage_prefix = "rom:/";
+            *primary_storage_prefix = "rom:/";
             debug_init_isviewer();
             break;
     }

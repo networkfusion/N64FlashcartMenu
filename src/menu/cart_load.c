@@ -162,7 +162,10 @@ cart_load_err_t cart_load_64dd_ipl_and_disk (menu_t *menu, flashcart_progress_ca
         return CART_LOAD_ERR_EXP_PAK_NOT_FOUND;
     }
 
-    path_t *path = path_init(menu->storage_prefix, DDIPL_LOCATION);
+    path_t *path = path_init(menu->primary_storage_prefix, DDIPL_LOCATION);
+    if (!directory_exists(path_get(path))) {
+        path = path_init(menu->dfs_storage_prefix, DDIPL_LOCATION);
+    }
     flashcart_disk_parameters_t disk_parameters;
 
     disk_parameters.development_drive = (menu->load.disk_info.region == DISK_REGION_DEVELOPMENT);
@@ -212,7 +215,10 @@ cart_load_err_t cart_load_64dd_ipl_and_disk (menu_t *menu, flashcart_progress_ca
  * @return cart_load_err_t Error code.
  */
 cart_load_err_t cart_load_emulator (menu_t *menu, cart_load_emu_type_t emu_type, flashcart_progress_callback_t progress) {
-    path_t *path = path_init(menu->storage_prefix, EMU_LOCATION);
+    path_t *path = path_init(menu->primary_storage_prefix, EMU_LOCATION);
+    if (!directory_exists(path_get(path))) {
+        path = path_init(menu->dfs_storage_prefix, EMU_LOCATION);
+    }
 
     flashcart_save_type_t save_type = FLASHCART_SAVE_TYPE_NONE;
     uint32_t emulated_rom_offset = 0x200000;

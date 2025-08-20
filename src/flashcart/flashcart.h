@@ -113,10 +113,11 @@ char *flashcart_convert_error_message (flashcart_err_t err);
 /**
  * @brief Initialize the flashcart.
  * 
- * @param storage_prefix Pointer to the storage prefix.
+ * @param primary_storage_prefix Pointer to the storage prefix.
+ * @param dfs_storage_prefix Pointer to the DFS storage prefix.
  * @return flashcart_err_t Error code.
  */
-flashcart_err_t flashcart_init (const char **storage_prefix);
+flashcart_err_t flashcart_init (const char **primary_storage_prefix, const char **dfs_storage_prefix);
 
 /**
  * @brief Deinitialize the flashcart.

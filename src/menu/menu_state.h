@@ -70,7 +70,8 @@ typedef struct {
     menu_mode_t mode;
     menu_mode_t next_mode;
 
-    const char *storage_prefix;
+    const char *primary_storage_prefix;
+    const char *dfs_storage_prefix;
     settings_t settings;
     bookkeeping_t bookkeeping;
     boot_params_t *boot_params;

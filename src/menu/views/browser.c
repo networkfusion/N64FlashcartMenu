@@ -8,7 +8,7 @@
 #include "views.h"
 #include "../sound.h"
 
-
+bool dfs_storage_selected = false;
 
 static const char *cheat_extensions[] = {"cht", "cheats", "datel", "gameshark", NULL};
 static const char *disk_extensions[] = { "ndd", NULL };
@@ -38,6 +38,12 @@ static const char *hidden_root_paths[] = {
     "/.metadata_never_index",
     NULL,
 };
+
+// static const char *storage_type_selected[] = {
+//     "SDC",
+//     "ROM",
+//     NULL,
+// };
 
 struct substr { const char *str; size_t len; };
 #define substr(str) ((struct substr){ str, sizeof(str) - 1 })
@@ -510,7 +516,12 @@ void view_browser_init (menu_t *menu) {
         ui_components_context_menu_init(&settings_context_menu);
         if (load_directory(menu)) {
             path_free(menu->browser.directory);
-            menu->browser.directory = path_init(menu->storage_prefix, "");
+            if (dfs_storage_selected) {
+                menu->browser.directory = path_init(menu->dfs_storage_prefix, "");
+            } 
+            else {
+                menu->browser.directory = path_init(menu->primary_storage_prefix, "");
+            }
             menu_show_error(menu, "Error while opening initial directory");
         } else {
             menu->browser.valid = true;

@@ -60,7 +60,7 @@ static void menu_init (boot_params_t *boot_params) {
     menu->mode = MENU_MODE_NONE;
     menu->next_mode = MENU_MODE_STARTUP;
 
-    menu->flashcart_err = flashcart_init(&menu->storage_prefix);
+    menu->flashcart_err = flashcart_init(&menu->primary_storage_prefix, &menu->dfs_storage_prefix);
     if (menu->flashcart_err != FLASHCART_OK) {
         menu->next_mode = MENU_MODE_FAULT;
     }
@@ -78,21 +78,21 @@ static void menu_init (boot_params_t *boot_params) {
 
     hdmi_clear_game_id();
 
-    path_t *path = path_init(menu->storage_prefix, MENU_DIRECTORY);
+    path_t *primary_storage_path = path_init(menu->primary_storage_prefix, MENU_DIRECTORY);
 
-    directory_create(path_get(path));
+    directory_create(path_get(primary_storage_path));
 
-    path_push(path, MENU_SETTINGS_FILE);
-    settings_init(path_get(path));
+    path_push(primary_storage_path, MENU_SETTINGS_FILE);
+    settings_init(path_get(primary_storage_path));
     settings_load(&menu->settings);
-    path_pop(path);
+    path_pop(primary_storage_path);
 
-    path_push(path, MENU_ROM_LOAD_HISTORY_FILE);
-    bookkeeping_init(path_get(path));
+    path_push(primary_storage_path, MENU_ROM_LOAD_HISTORY_FILE);
+    bookkeeping_init(path_get(primary_storage_path));
     bookkeeping_load(&menu->bookkeeping);
     menu->load.load_history = -1;
     menu->load.load_favorite = -1;
-    path_pop(path);
+    path_pop(primary_storage_path);
   
     if (menu->settings.pal60_compatibility_mode) { // hardware VI mods that dont really understand the output
         tv_type = get_tv_type();
@@ -115,24 +115,24 @@ static void menu_init (boot_params_t *boot_params) {
     display_init(resolution, DEPTH_16_BPP, 2, GAMMA_NONE, interlaced ? FILTERS_DISABLED : FILTERS_RESAMPLE);
     display_set_fps_limit(FPS_LIMIT);
 
-    path_push(path, MENU_CUSTOM_FONT_FILE);
-    fonts_init(path_get(path));
-    path_pop(path);
+    path_push(primary_storage_path, MENU_CUSTOM_FONT_FILE);
+    fonts_init(path_get(primary_storage_path));
+    path_pop(primary_storage_path);
 
-    path_push(path, MENU_CACHE_DIRECTORY);
-    directory_create(path_get(path));
+    path_push(primary_storage_path, MENU_CACHE_DIRECTORY);
+    directory_create(path_get(primary_storage_path));
 
-    path_push(path, BACKGROUND_CACHE_FILE);
-    ui_components_background_init(path_get(path));
+    path_push(primary_storage_path, BACKGROUND_CACHE_FILE);
+    ui_components_background_init(path_get(primary_storage_path));
 
-    path_free(path);
+    path_free(primary_storage_path);
 
     sound_use_sfx(menu->settings.soundfx_enabled);
 
-    menu->browser.directory = path_init(menu->storage_prefix, menu->settings.default_directory);
+    menu->browser.directory = path_init(menu->primary_storage_prefix, menu->settings.default_directory);
     if (!directory_exists(path_get(menu->browser.directory))) {
         path_free(menu->browser.directory);
-        menu->browser.directory = path_init(menu->storage_prefix, "/");
+        menu->browser.directory = path_init(menu->primary_storage_prefix, "/");
     }
 
     debugf("N64FlashcartMenu debugging...\n");
