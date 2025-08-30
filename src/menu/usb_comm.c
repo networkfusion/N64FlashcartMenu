@@ -16,7 +16,7 @@
 #include "usb_comm.h"
 #include "utils/utils.h"
 
-#define MAX_FILE_SIZE   MiB(4)
+#define MAX_FILE_SIZE   MiB(64)
 
 /** @brief The supported USB commands structure. */
 typedef struct {
