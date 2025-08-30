@@ -10,6 +10,7 @@
 
 #include <fatfs/ff.h>
 #include <libdragon.h>
+#include <sys/stat.h>
 
 #include "utils/fs.h"
 #include "utils/utils.h"
@@ -531,42 +532,89 @@ static flashcart_err_t sc64_load_save (char *save_path) {
     return FLASHCART_OK;
 }
 
-static flashcart_err_t sc64_load_64dd_ipl (char *ipl_path, flashcart_progress_callback_t *progress) {
-    FIL fil;
-    UINT br;
+static flashcart_err_t sc64_load_64dd_ipl (char *ipl_path, bool is_sd_path, flashcart_progress_callback_t *progress) {
 
-    if (f_open(&fil, strip_fs_prefix(ipl_path), FA_READ) != FR_OK) {
-        return FLASHCART_ERR_LOAD;
-    }
+    if (is_sd_path) {
+        FIL fil;
+        UINT br;
 
-    fatfs_fix_file_size(&fil);
+        if (f_open(&fil, strip_fs_prefix(ipl_path), FA_READ) != FR_OK) {
+            return FLASHCART_ERR_LOAD;
+        }
 
-    size_t ipl_size = f_size(&fil);
+        fatfs_fix_file_size(&fil);
 
-    if (ipl_size > MiB(4)) {
-        f_close(&fil);
-        return FLASHCART_ERR_LOAD;
-    }
+        size_t ipl_size = f_size(&fil);
 
-    size_t chunk_size = KiB(128);
-    for (unsigned int offset = 0; offset < ipl_size; offset += chunk_size) {
-        size_t block_size = MIN(ipl_size - offset, chunk_size);
-        if (f_read(&fil, (void *) (IPL_ADDRESS + offset), block_size, &br) != FR_OK) {
+        if (ipl_size > MiB(4)) {
             f_close(&fil);
             return FLASHCART_ERR_LOAD;
         }
-        if (progress) {
-            progress(f_tell(&fil) / (float) (f_size(&fil)));
-        }
-    }
-    if (f_tell(&fil) != ipl_size) {
-        f_close(&fil);
-        return FLASHCART_ERR_LOAD;
-    }
 
-    if (f_close(&fil) != FR_OK) {
-        return FLASHCART_ERR_LOAD;
+        size_t chunk_size = KiB(128);
+        for (unsigned int offset = 0; offset < ipl_size; offset += chunk_size) {
+            size_t block_size = MIN(ipl_size - offset, chunk_size);
+            if (f_read(&fil, (void *) (IPL_ADDRESS + offset), block_size, &br) != FR_OK) {
+                f_close(&fil);
+                return FLASHCART_ERR_LOAD;
+            }
+            if (progress) {
+                progress(f_tell(&fil) / (float) (f_size(&fil)));
+            }
+        }
+        if (f_tell(&fil) != ipl_size) {
+            f_close(&fil);
+            return FLASHCART_ERR_LOAD;
+        }
+
+        if (f_close(&fil) != FR_OK) {
+            return FLASHCART_ERR_LOAD;
+        }
+
     }
+    else {
+            // debugf("Loading IPL from DFS\n");
+            // debugf("Path: %s\n", ipl_path);
+            // FILE *file = fopen(ipl_path, "rb");
+            // struct stat st;
+
+            // if (file == NULL) {
+            //     return FLASHCART_ERR_LOAD;
+            // }
+
+            // fstat(fileno(file), &st);
+
+            // size_t ipl_size = st.st_size;
+            // debugf("IPL size: %u\n", ipl_size);
+
+            // if (ipl_size > MiB(4)) {
+            //     fclose(file);
+            //     return FLASHCART_ERR_LOAD;
+            // }
+
+            // // size_t chunk_size = KiB(128);
+            // // for (uint32_t offset = 0; offset < ipl_size; offset += chunk_size) {
+            // //     size_t block_size = MIN(ipl_size - offset, chunk_size);
+            // //     fread((void *) (IPL_ADDRESS + offset), block_size, chunk_size, file);
+            // //     if (ferror(file)) {
+            // //         fclose(file);
+            // //         return FLASHCART_ERR_LOAD;
+            // //     }
+            // //     if (progress) {
+            // //         progress(ftell(file) / (float) (ipl_size));
+            // //     }
+            // // }
+            // //fread((void *) (IPL_ADDRESS), ipl_size, 1, file);
+            // // if (ftell(file) != ipl_size) {
+            // //     fclose(file);
+            // //     return FLASHCART_ERR_LOAD;
+            // // }
+
+            // if (fclose(file)) {
+            //     return FLASHCART_ERR_LOAD;
+            // }
+        }
+
 
     return FLASHCART_OK;
 }

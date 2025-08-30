@@ -150,6 +150,7 @@ cart_load_err_t cart_load_n64_rom_and_save (menu_t *menu, flashcart_progress_cal
  * @return cart_load_err_t Error code.
  */
 cart_load_err_t cart_load_64dd_ipl_and_disk (menu_t *menu, flashcart_progress_callback_t progress) {
+    bool is_sd_path = true;
     if (!flashcart_has_feature(FLASHCART_FEATURE_64DD)) {
         return CART_LOAD_ERR_FUNCTION_NOT_SUPPORTED;
     }
@@ -165,6 +166,7 @@ cart_load_err_t cart_load_64dd_ipl_and_disk (menu_t *menu, flashcart_progress_ca
     path_t *path = path_init(menu->primary_storage_prefix, DDIPL_LOCATION);
     if (!directory_exists(path_get(path))) {
         path = path_init(menu->dfs_storage_prefix, DDIPL_LOCATION);
+        is_sd_path = false;
     }
     flashcart_disk_parameters_t disk_parameters;
 
@@ -190,7 +192,7 @@ cart_load_err_t cart_load_64dd_ipl_and_disk (menu_t *menu, flashcart_progress_ca
         return CART_LOAD_ERR_64DD_IPL_NOT_FOUND;
     }
 
-    menu->flashcart_err = flashcart_load_64dd_ipl(path_get(path), progress);
+    menu->flashcart_err = flashcart_load_64dd_ipl(path_get(path), is_sd_path, progress);
     if (menu->flashcart_err != FLASHCART_OK) {
         path_free(path);
         return CART_LOAD_ERR_64DD_IPL_LOAD_FAIL;

@@ -323,7 +323,7 @@ flashcart_err_t flashcart_load_save (char *save_path, flashcart_save_type_t save
  * @param progress Progress callback function.
  * @return flashcart_err_t Error code.
  */
-flashcart_err_t flashcart_load_64dd_ipl (char *ipl_path, flashcart_progress_callback_t *progress) {
+flashcart_err_t flashcart_load_64dd_ipl (char *ipl_path, bool is_sd_path, flashcart_progress_callback_t *progress) {
     if (!flashcart->load_64dd_ipl) {
         return FLASHCART_ERR_FUNCTION_NOT_SUPPORTED;
     }
@@ -332,7 +332,7 @@ flashcart_err_t flashcart_load_64dd_ipl (char *ipl_path, flashcart_progress_call
         return FLASHCART_ERR_ARGS;
     }
 
-    return flashcart->load_64dd_ipl(ipl_path, progress);
+    return flashcart->load_64dd_ipl(ipl_path, is_sd_path, progress);
 }
 
 /**
