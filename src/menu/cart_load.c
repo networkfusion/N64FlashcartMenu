@@ -192,7 +192,15 @@ cart_load_err_t cart_load_64dd_ipl_and_disk (menu_t *menu, flashcart_progress_ca
         return CART_LOAD_ERR_64DD_IPL_NOT_FOUND;
     }
 
-    menu->flashcart_err = flashcart_load_64dd_ipl(path_get(path), is_sd_path, progress);
+    if (is_sd_path)
+    {
+        menu->flashcart_err = flashcart_load_64dd_ipl(path_get(path), progress);
+    }
+    else
+    {
+        // For non-SD paths, we assume the file is on the dfs, so we dont need to load it.
+        debugf("64DD IPL assumed to be on the DFS, skipping load.");
+    }
     if (menu->flashcart_err != FLASHCART_OK) {
         path_free(path);
         return CART_LOAD_ERR_64DD_IPL_LOAD_FAIL;
