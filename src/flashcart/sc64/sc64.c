@@ -10,7 +10,6 @@
 
 #include <fatfs/ff.h>
 #include <libdragon.h>
-#include <sys/stat.h>
 
 #include "utils/fs.h"
 #include "utils/utils.h"
