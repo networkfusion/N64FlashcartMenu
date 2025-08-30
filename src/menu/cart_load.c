@@ -150,7 +150,7 @@ cart_load_err_t cart_load_n64_rom_and_save (menu_t *menu, flashcart_progress_cal
  * @return cart_load_err_t Error code.
  */
 cart_load_err_t cart_load_64dd_ipl_and_disk (menu_t *menu, flashcart_progress_callback_t progress) {
-    bool is_sd_path = true;
+    bool dfs_storage_selected = false;
     if (!flashcart_has_feature(FLASHCART_FEATURE_64DD)) {
         return CART_LOAD_ERR_FUNCTION_NOT_SUPPORTED;
     }
@@ -166,7 +166,7 @@ cart_load_err_t cart_load_64dd_ipl_and_disk (menu_t *menu, flashcart_progress_ca
     path_t *path = path_init(menu->primary_storage_prefix, DDIPL_LOCATION);
     if (!directory_exists(path_get(path))) {
         path = path_init(menu->dfs_storage_prefix, DDIPL_LOCATION);
-        is_sd_path = false;
+        dfs_storage_selected = true;
     }
     flashcart_disk_parameters_t disk_parameters;
 
@@ -192,14 +192,14 @@ cart_load_err_t cart_load_64dd_ipl_and_disk (menu_t *menu, flashcart_progress_ca
         return CART_LOAD_ERR_64DD_IPL_NOT_FOUND;
     }
 
-    if (is_sd_path)
+    if (!dfs_storage_selected)
     {
         menu->flashcart_err = flashcart_load_64dd_ipl(path_get(path), progress);
     }
     else
     {
-        // For non-SD paths, we assume the file is on the dfs, so we dont need to load it.
-        debugf("64DD IPL assumed to be on the DFS, skipping load.");
+        // For dfs paths, we assume the file is already loaded, so we dont need to do it again.
+        debugf("64DD IPL on the ROM DFS, skipping load.");
     }
     if (menu->flashcart_err != FLASHCART_OK) {
         path_free(path);
