@@ -226,9 +226,6 @@ cart_load_err_t cart_load_64dd_ipl_and_disk (menu_t *menu, flashcart_progress_ca
  */
 cart_load_err_t cart_load_emulator (menu_t *menu, cart_load_emu_type_t emu_type, flashcart_progress_callback_t progress) {
     path_t *path = path_init(menu->primary_storage_prefix, EMU_LOCATION);
-    if (!directory_exists(path_get(path))) {
-        path = path_init(menu->dfs_storage_prefix, EMU_LOCATION);
-    }
 
     flashcart_save_type_t save_type = FLASHCART_SAVE_TYPE_NONE;
     uint32_t emulated_rom_offset = 0x200000;
