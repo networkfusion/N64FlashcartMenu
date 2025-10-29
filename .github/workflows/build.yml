@@ -27,13 +27,38 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build N64FlashcartMenu ROM
+      - name: Build N64FlashcartMenu ROM (main)
         uses: devcontainers/ci@v0.3
+        if: github.ref == 'refs/heads/main'
         with:
           imageName: ghcr.io/polprzewodnikowy/n64flashcartmenu-devcontainer
           cacheFrom: ghcr.io/polprzewodnikowy/n64flashcartmenu-devcontainer
           push: ${{ github.repository_owner == 'Polprzewodnikowy' && 'filter' || 'never' }}
           refFilterForPush: refs/heads/main
+          runCmd: |
+            MENU_VERSION="Rolling release" make all -j
+        env:
+          FLAGS: -DNDEBUG
+
+      - name: Build N64FlashcartMenu ROM (develop)
+        uses: devcontainers/ci@v0.3
+        if: github.ref == 'refs/heads/develop'
+        with:
+          imageName: ghcr.io/polprzewodnikowy/n64flashcartmenu-devcontainer
+          cacheFrom: ghcr.io/polprzewodnikowy/n64flashcartmenu-devcontainer
+          push: 'never'
+          runCmd: |
+             MENU_VERSION="Rolling pre-release" make all -j
+        env:
+          FLAGS: -DNDEBUG
+
+      - name: Build N64FlashcartMenu ROM (other branches)
+        uses: devcontainers/ci@v0.3
+        if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/develop'
+        with:
+          imageName: ghcr.io/polprzewodnikowy/n64flashcartmenu-devcontainer
+          cacheFrom: ghcr.io/polprzewodnikowy/n64flashcartmenu-devcontainer
+          push: 'never'
           runCmd: |
             make all -j
         env:
@@ -99,8 +124,8 @@ jobs:
           files: |
             ./output/N64FlashcartMenu.n64
             ./output/menu.bin
-            # ./output/OS64.v64
-            # ./output/OS64P.v64
+            ./output/OS64.v64
+            ./output/OS64P.v64
             ./output/sc64menu.n64
         continue-on-error: true
 
@@ -117,20 +142,10 @@ jobs:
         with:
           doxyfile-path: './Doxyfile'
 
-      # - name: Deploy docs to GitHub Pages (main)
-      #   uses: peaceiris/actions-gh-pages@v4
-      #   if: github.ref == 'refs/heads/main'
-      #   with:
-      #     github_token: ${{ secrets.GITHUB_TOKEN }}
-      #     publish_dir: ./output/docs
-      #     cname: menu.summercart64.dev
-
-      - name: Deploy docs to GitHub Pages (develop)
+      - name: Deploy docs to GitHub Pages (main)
         uses: peaceiris/actions-gh-pages@v4
-        if: github.ref == 'refs/heads/develop'
+        if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./output/docs
           cname: menu.summercart64.dev
-          # publish_branch: gh-pages-develop
-          # cname: prerelease.menu.summercart64.dev
