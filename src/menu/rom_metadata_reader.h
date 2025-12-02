@@ -7,7 +7,7 @@
 /* Try to extract metadata.ini from external .meta ZIP or embedded ZIP and
  * return a loaded mini_t* (caller must free with mini_free). Returns NULL on
  * failure. */
-mini_t *rom_metadata_load_from_meta_or_embedded(path_t *rom_path);
+mini_t *rom_metadata_load_from_ini_file(path_t *rom_path);
 
 /*
  * Extract a file from the metadata ZIP (external .meta or embedded) into a

@@ -813,8 +813,11 @@ static void load_rom_config_from_file (path_t *path, rom_info_t *rom_info) {
         mini_free(rom_config_ini);
     }
 
-    {
-        mini_t *meta_ini = rom_metadata_load_from_meta_or_embedded(path);
+    path_free(rom_info_path);
+}
+
+static void load_rom_metadata_from_file(path_t *path, rom_info_t *rom_info) {
+        mini_t *meta_ini = rom_metadata_load_from_ini_file(path);
         if (meta_ini) {
             /* Support age-rating` integer key only. */
             int32_t age_from_meta = mini_get_int(meta_ini, "meta", "age-rating", (int32_t)rom_info->metadata.age_rating);
@@ -847,7 +850,7 @@ static void load_rom_config_from_file (path_t *path, rom_info_t *rom_info) {
             s = mini_get_string(meta_ini, "metadata", "long_desc", NULL);
             if (!s) s = mini_get_string(meta_ini, "meta", "long_desc", NULL);
             if (s) {
-                /* Spec change: long_desc is now a filename pointing to a .txt file
+                /* long_desc is a filename pointing to a .txt file
                    inside the metadata ZIP. Try to extract that file and load its
                    contents into the long_desc buffer. Fall back to copying the
                    raw value if extraction fails. */
@@ -887,9 +890,6 @@ static void load_rom_config_from_file (path_t *path, rom_info_t *rom_info) {
             mini_free(meta_ini);
         }
     }
-
-    path_free(rom_info_path);
-}
 
 static rom_err_t save_rom_config_setting_to_file (path_t *path, const char *type, const char *id, int value, int default_value) {
     path_t *rom_info_path = path_clone(path);
