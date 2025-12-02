@@ -175,14 +175,14 @@ typedef struct {
         char short_description[128];        /**< Short description (display) */
         // /* Filenames referenced in metadata ZIP (or external) */
         char long_description_filename[64];         /**< Long description filename */
-        // char boxart_front_filename[64];
-        // char boxart_back_filename[64];
-        // char boxart_left_filename[64];
-        // char boxart_right_filename[64];
-        // char boxart_top_filename[64];
-        // char boxart_bottom_filename[64];
-        // char gamepak_front_filename[64];
-        // char gamepak_back_filename[64];
+        char boxart_front_filename[64];
+        char boxart_back_filename[64];
+        char boxart_left_filename[64];
+        char boxart_right_filename[64];
+        char boxart_top_filename[64];
+        char boxart_bottom_filename[64];
+        char gamepak_front_filename[64];
+        char gamepak_back_filename[64];
     } metadata;                     /**< The ROM metadata */
 } rom_info_t;
 
