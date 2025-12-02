@@ -95,3 +95,59 @@ mini_t *homebrew_rom_metadata_load_from_meta_or_embedded(path_t *rom_path) {
     path_free(meta_path);
     return result;
 }
+
+/* Extract an arbitrary file from the metadata ZIP (external .meta or embedded)
+ * into heap memory. Caller must free returned buffer with mz_free(). Returns
+ * NULL on failure. If out_size is provided it will be set to the extracted size.
+ */
+void *homebrew_rom_metadata_extract_file_to_heap(path_t *rom_path, const char *filename, size_t *out_size) {
+    if (!path_has_value(rom_path) || !filename) {
+        return NULL;
+    }
+
+    path_t *meta_path = path_clone(rom_path);
+    path_ext_replace(meta_path, "meta");
+
+    const char *zip_candidate = NULL;
+
+    if (file_exists(path_get(meta_path))) {
+        zip_candidate = path_get(meta_path);
+    } else {
+        FILE *f = fopen(path_get(rom_path), "rb");
+        if (f) {
+            if (fseek(f, 0x38, SEEK_SET) == 0) {
+                int b = fgetc(f);
+                if (b != EOF) {
+                    if (b & 0x01) {
+                        zip_candidate = path_get(rom_path);
+                    }
+                }
+            }
+            fclose(f);
+        }
+    }
+
+    void *result = NULL;
+
+    if (zip_candidate) {
+        mz_zip_archive zip;
+        memset(&zip, 0, sizeof(zip));
+
+        if (mz_zip_reader_init_file(&zip, zip_candidate, 0)) {
+            int fi = mz_zip_reader_locate_file(&zip, filename, NULL, 0);
+            if (fi >= 0) {
+                size_t size = 0;
+                void *data = mz_zip_reader_extract_to_heap(&zip, fi, &size, 0);
+                if (data && size > 0) {
+                    result = data;
+                    if (out_size) *out_size = size;
+                }
+            }
+
+            mz_zip_reader_end(&zip);
+        }
+    }
+
+    path_free(meta_path);
+    return result;
+}

@@ -11,6 +11,8 @@
 
 #include <mini.c/src/mini.h>
 
+#include <miniz.h>
+
 #include "boot/cic.h"
 #include "rom_info.h"
 #include "utils/fs.h"
@@ -813,7 +815,6 @@ static void load_rom_config_from_file (path_t *path, rom_info_t *rom_info) {
         mini_free(rom_config_ini);
     }
 
-    /* Try to load metadata.ini from .meta (external) or embedded ZIP and merge */
     {
         mini_t *meta_ini = homebrew_rom_metadata_load_from_meta_or_embedded(path);
         if (meta_ini) {
@@ -849,7 +850,24 @@ static void load_rom_config_from_file (path_t *path, rom_info_t *rom_info) {
 
             s = mini_get_string(meta_ini, "metadata", "long_desc", NULL);
             if (!s) s = mini_get_string(meta_ini, "meta", "long_desc", NULL);
-            if (s) strncpy(rom_info->metadata.long_desc, s, sizeof(rom_info->metadata.long_desc) - 1);
+            if (s) {
+                /* Spec change: long_desc is now a filename pointing to a .txt file
+                   inside the metadata ZIP. Try to extract that file and load its
+                   contents into the long_desc buffer. Fall back to copying the
+                   raw value if extraction fails. */
+                size_t txt_size = 0;
+                char *txt = (char *) homebrew_rom_metadata_extract_file_to_heap(path, s, &txt_size);
+                if (txt && txt_size > 0) {
+                    /* Ensure buffer fits and is NUL-terminated */
+                    size_t copy_len = (txt_size < (sizeof(rom_info->metadata.long_desc) - 1)) ? txt_size : (sizeof(rom_info->metadata.long_desc) - 1);
+                    memcpy(rom_info->metadata.long_desc, txt, copy_len);
+                    rom_info->metadata.long_desc[copy_len] = '\0';
+                    mz_free(txt);
+                } else {
+                    /* Fallback: store the raw INI value (previous behavior) */
+                    strncpy(rom_info->metadata.long_desc, s, sizeof(rom_info->metadata.long_desc) - 1);
+                }
+            }
 
             /* Boxart/cartart filenames (section [boxart] and [cartart]) */
             s = mini_get_string(meta_ini, "boxart", "front", NULL);

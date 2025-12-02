@@ -9,4 +9,11 @@
  * failure. */
 mini_t *homebrew_rom_metadata_load_from_meta_or_embedded(path_t *rom_path);
 
+/*
+ * Extract a file from the metadata ZIP (external .meta or embedded) into a
+ * heap buffer. Returns pointer to heap data (caller must free with mz_free),
+ * and sets *out_size if not NULL. Returns NULL on failure.
+ */
+void *homebrew_rom_metadata_extract_file_to_heap(path_t *rom_path, const char *filename, size_t *out_size);
+
 #endif // HOMBREW_ROM_METADATA_READER_H
