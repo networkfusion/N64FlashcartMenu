@@ -758,11 +758,11 @@ static void extract_rom_info (match_t *match, rom_header_t *rom_header, rom_info
         rom_info->features.expansion_pak = EXPANSION_PAK_NONE;
     }
 
-    rom_info->metadata.esrb_age_rating = ROM_ESRB_AGE_RATING_NONE;
     rom_info->metadata.name[0] = '\0';
     rom_info->metadata.author[0] = '\0';
     rom_info->metadata.release_date[0] = '\0';
     rom_info->metadata.website[0] = '\0';
+    rom_info->metadata.age_rating = 0;
     rom_info->metadata.short_desc[0] = '\0';
     rom_info->metadata.long_desc[0] = '\0';
     rom_info->metadata.boxart_front[0] = '\0';
@@ -793,8 +793,6 @@ static void load_rom_config_from_file (path_t *path, rom_info_t *rom_info) {
         rom_info->settings.cheats_enabled = mini_get_bool(rom_config_ini, NULL, "cheats_enabled", false);
         rom_info->settings.patches_enabled = mini_get_bool(rom_config_ini, NULL, "patches_enabled", false);
 
-        // metadata
-        rom_info->metadata.esrb_age_rating = mini_get_int(rom_config_ini, "metadata", "esrb_age_rating", ROM_ESRB_AGE_RATING_NONE);
         
         // overrides
         rom_info->boot_override.cic_type = mini_get_int(rom_config_ini, "custom_boot", "cic_type", ROM_CIC_TYPE_AUTOMATIC);
@@ -818,13 +816,11 @@ static void load_rom_config_from_file (path_t *path, rom_info_t *rom_info) {
     {
         mini_t *meta_ini = homebrew_rom_metadata_load_from_meta_or_embedded(path);
         if (meta_ini) {
-            /* Support both [metadata] and [meta] groups in case of different sources */
-            int esrb_from_meta = (int) mini_get_int(meta_ini, "metadata", "esrb_age_rating", rom_info->metadata.esrb_age_rating);
-            if (esrb_from_meta == rom_info->metadata.esrb_age_rating) {
-                /* try alternate group name */
-                esrb_from_meta = (int) mini_get_int(meta_ini, "meta", "esrb_age_rating", rom_info->metadata.esrb_age_rating);
+            /* Support age-rating` integer key only. */
+            int32_t age_from_meta = mini_get_int(meta_ini, "meta", "age-rating", (int32_t)rom_info->metadata.age_rating);
+            if (age_from_meta != -1) {
+                rom_info->metadata.age_rating = (int32_t) age_from_meta;
             }
-            rom_info->metadata.esrb_age_rating = (rom_esrb_age_rating_t) esrb_from_meta;
 
             /* Strings: use values from metadata.ini if present (UTF-8). We copy into fixed buffers. */
             const char *s;

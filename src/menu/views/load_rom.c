@@ -230,16 +230,16 @@ static const char *format_cic_type (rom_cic_type_t cic_type) {
     }
 }
 
-static const char *format_esrb_age_rating (rom_esrb_age_rating_t esrb_age_rating) {
-    switch (esrb_age_rating) {
-        case ROM_ESRB_AGE_RATING_NONE: return "None";
-        case ROM_ESRB_AGE_RATING_EVERYONE: return "Everyone";
-        case ROM_ESRB_AGE_RATING_EVERYONE_10_PLUS: return "Everyone 10+";
-        case ROM_ESRB_AGE_RATING_TEEN: return "Teen";
-        case ROM_ESRB_AGE_RATING_MATURE: return "Mature";
-        case ROM_ESRB_AGE_RATING_ADULT: return "Adults Only";
-        default: return "Unknown";
+static const char *format_minimum_age_rating (int32_t age_rating) {
+    static char buf[8];
+
+    if (age_rating <= 0) {
+        return "None";
     }
+
+    /* Format as a minimum age, e.g. "12+" */
+    snprintf(buf, sizeof(buf), "%d+", age_rating);
+    return buf;
 }
 
 static inline const char *format_boolean_type (bool bool_value) {
@@ -538,7 +538,7 @@ static void draw (menu_t *menu, surface_t *d) {
                 format_rom_media_type(menu->load.rom_info.category_code),
                 format_rom_destination_market(menu->load.rom_info.destination_code),
                 menu->load.rom_info.version,
-                format_esrb_age_rating(menu->load.rom_info.metadata.esrb_age_rating),
+                format_minimum_age_rating(menu->load.rom_info.metadata.age_rating),
                 menu->load.rom_info.check_code,
                 format_cic_type(rom_info_get_cic_type(&menu->load.rom_info)),
                 menu->load.rom_info.boot_address,
