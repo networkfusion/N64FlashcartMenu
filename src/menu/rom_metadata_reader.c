@@ -64,7 +64,7 @@ mini_t *rom_metadata_load_from_ini_file(path_t *rom_path) {
                     path_pop(tmp); /* now tmp is directory */
 
                     char tmpname[256];
-                    snprintf(tmpname, sizeof(tmpname), "%s.meta.ini", basename);
+                    snprintf(tmpname, sizeof(tmpname), "%s.metadata.ini.tmp", basename);
                     free(basename);
 
                     path_push(tmp, tmpname);
