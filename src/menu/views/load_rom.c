@@ -238,7 +238,7 @@ static const char *format_minimum_age_rating (int32_t age_rating) {
     }
 
     /* Format as a minimum age, e.g. "12+" */
-    snprintf(buf, sizeof(buf), "%d+", age_rating);
+    snprintf(buf, sizeof(buf), "%ld+", age_rating);
     return buf;
 }
 

@@ -17,7 +17,7 @@
  * ROM and return a loaded mini_t * (caller must mini_free it). Returns NULL
  * on failure.
  */
-mini_t *homebrew_rom_metadata_load_from_meta_or_embedded(path_t *rom_path) {
+mini_t *rom_metadata_load_from_meta_or_embedded(path_t *rom_path) {
     if (!path_has_value(rom_path)) {
         return NULL;
     }
@@ -100,7 +100,7 @@ mini_t *homebrew_rom_metadata_load_from_meta_or_embedded(path_t *rom_path) {
  * into heap memory. Caller must free returned buffer with mz_free(). Returns
  * NULL on failure. If out_size is provided it will be set to the extracted size.
  */
-void *homebrew_rom_metadata_extract_file_to_heap(path_t *rom_path, const char *filename, size_t *out_size) {
+void *rom_metadata_extract_file_to_heap(path_t *rom_path, const char *filename, size_t *out_size) {
     if (!path_has_value(rom_path) || !filename) {
         return NULL;
     }

@@ -814,7 +814,7 @@ static void load_rom_config_from_file (path_t *path, rom_info_t *rom_info) {
     }
 
     {
-        mini_t *meta_ini = homebrew_rom_metadata_load_from_meta_or_embedded(path);
+        mini_t *meta_ini = rom_metadata_load_from_meta_or_embedded(path);
         if (meta_ini) {
             /* Support age-rating` integer key only. */
             int32_t age_from_meta = mini_get_int(meta_ini, "meta", "age-rating", (int32_t)rom_info->metadata.age_rating);
@@ -852,7 +852,7 @@ static void load_rom_config_from_file (path_t *path, rom_info_t *rom_info) {
                    contents into the long_desc buffer. Fall back to copying the
                    raw value if extraction fails. */
                 size_t txt_size = 0;
-                char *txt = (char *) homebrew_rom_metadata_extract_file_to_heap(path, s, &txt_size);
+                char *txt = (char *) rom_metadata_extract_file_to_heap(path, s, &txt_size);
                 if (txt && txt_size > 0) {
                     /* Ensure buffer fits and is NUL-terminated */
                     size_t copy_len = (txt_size < (sizeof(rom_info->metadata.long_desc) - 1)) ? txt_size : (sizeof(rom_info->metadata.long_desc) - 1);

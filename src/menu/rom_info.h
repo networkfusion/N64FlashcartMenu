@@ -172,8 +172,8 @@ typedef struct {
         char website[128];           /**< Website URL */
         int32_t age_rating;          /**< The game age rating */
         char short_desc[128];        /**< Short description (display) */
-        char long_desc[512];         /**< Long description */
         /* Filenames referenced in metadata ZIP (or external) */
+        char long_desc[64];         /**< Long description filename */
         char boxart_front[64];
         char boxart_back[64];
         char boxart_left[64];
