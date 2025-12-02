@@ -12,6 +12,9 @@ static bool show_extra_info_message = false;
 static component_boxart_t *boxart;
 static char *rom_filename = NULL;
 
+/* Toggle showing the full long description when the user presses Down */
+static bool show_long_description = false;
+
 static int16_t current_metadata_image_index = 0;
 static const file_image_type_t metadata_image_filename_cache[] = {
     IMAGE_BOXART_FRONT,
@@ -94,9 +97,20 @@ static void scan_metadata_images(menu_t *menu) {
 }
 
 static const char *format_rom_description(menu_t *menu) {
-    char *rom_description = NULL;
+    /* Prefer short description by default; when user toggles Down, show full long description if present. */
+    if (show_long_description && menu && path_has_value(menu->load.rom_path)) {
+        if (menu->load.rom_info.metadata.long_desc[0] != '\0') {
+            return menu->load.rom_info.metadata.long_desc;
+        }
+    }
 
-    return rom_description ? rom_description : "No description available.";
+    if (menu && path_has_value(menu->load.rom_path)) {
+        if (menu->load.rom_info.metadata.short_desc[0] != '\0') {
+            return menu->load.rom_info.metadata.short_desc;
+        }
+    }
+
+    return "No description available.";
 }
 
 static char *convert_error_message (rom_err_t err) {
@@ -409,6 +423,12 @@ static void process (menu_t *menu) {
 
     if (menu->actions.enter) {
         menu->load_pending.rom_file = true;
+    } else if (menu->actions.go_down) {
+        /* Toggle showing long description when the Down button is pressed */
+        if (menu->load.rom_info.metadata.long_desc[0] != '\0') {
+            show_long_description = !show_long_description;
+            sound_play_effect(SFX_SETTING);
+        }
     } else if (menu->actions.back) {
         sound_play_effect(SFX_EXIT);
         menu->next_mode = MENU_MODE_BROWSER;
@@ -614,6 +634,7 @@ static void deinit (void) {
     boxart = NULL;
     current_metadata_image_index = 0;
     metadata_images_scanned = false;
+    show_long_description = false;
 
     // Clear availability cache
     for (uint16_t i = 0; i < metadata_image_filename_cache_length; i++) {
