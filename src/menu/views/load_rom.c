@@ -99,14 +99,14 @@ static void scan_metadata_images(menu_t *menu) {
 static const char *format_rom_description(menu_t *menu) {
     /* Prefer short description by default; when user toggles Down, show full long description if present. */
     if (show_long_description && menu && path_has_value(menu->load.rom_path)) {
-        if (menu->load.rom_info.metadata.long_desc[0] != '\0') {
-            return menu->load.rom_info.metadata.long_desc;
+        if (menu->load.rom_info.metadata.long_description_filename[0] != '\0') {
+            return menu->load.rom_info.metadata.long_description_filename;
         }
     }
 
     if (menu && path_has_value(menu->load.rom_path)) {
-        if (menu->load.rom_info.metadata.short_desc[0] != '\0') {
-            return menu->load.rom_info.metadata.short_desc;
+        if (menu->load.rom_info.metadata.short_description[0] != '\0') {
+            return menu->load.rom_info.metadata.short_description;
         }
     }
 
@@ -425,7 +425,7 @@ static void process (menu_t *menu) {
         menu->load_pending.rom_file = true;
     } else if (menu->actions.go_down) {
         /* Toggle showing long description when the Down button is pressed */
-        if (menu->load.rom_info.metadata.long_desc[0] != '\0') {
+        if (menu->load.rom_info.metadata.long_description_filename[0] != '\0') {
             show_long_description = !show_long_description;
             sound_play_effect(SFX_SETTING);
         }

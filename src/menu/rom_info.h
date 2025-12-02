@@ -169,19 +169,20 @@ typedef struct {
         char name[64];               /**< UTF-8 game name from metadata.ini */
         char author[64];             /**< Author/publisher */
         char release_date[12];       /**< YYYY-MM-DD */
+        char license[64];             /**< OSI License */
         char website[128];           /**< Website URL */
         int32_t age_rating;          /**< The game age rating */
-        char short_desc[128];        /**< Short description (display) */
-        /* Filenames referenced in metadata ZIP (or external) */
-        char long_desc[64];         /**< Long description filename */
-        char boxart_front[64];
-        char boxart_back[64];
-        char boxart_left[64];
-        char boxart_right[64];
-        char boxart_top[64];
-        char boxart_bottom[64];
-        char gamepak_front[64];
-        char gamepak_back[64];
+        char short_description[128];        /**< Short description (display) */
+        // /* Filenames referenced in metadata ZIP (or external) */
+        char long_description_filename[64];         /**< Long description filename */
+        // char boxart_front_filename[64];
+        // char boxart_back_filename[64];
+        // char boxart_left_filename[64];
+        // char boxart_right_filename[64];
+        // char boxart_top_filename[64];
+        // char boxart_bottom_filename[64];
+        // char gamepak_front_filename[64];
+        // char gamepak_back_filename[64];
     } metadata;                     /**< The ROM metadata */
 } rom_info_t;
 
