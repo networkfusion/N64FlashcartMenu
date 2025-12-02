@@ -819,7 +819,7 @@ static void load_rom_config_from_file (path_t *path, rom_info_t *rom_info) {
 static void load_rom_metadata_from_file(path_t *path, rom_info_t *rom_info) {
         mini_t *meta_ini = rom_metadata_load_from_ini_file(path);
         if (meta_ini) {
-            /* Support age-rating` integer key only. */
+            /* Support age-rating` integer only. */
             int32_t age_from_meta = mini_get_int(meta_ini, "meta", "age-rating", (int32_t)rom_info->metadata.age_rating);
             if (age_from_meta != -1) {
                 rom_info->metadata.age_rating = (int32_t) age_from_meta;
@@ -827,28 +827,22 @@ static void load_rom_metadata_from_file(path_t *path, rom_info_t *rom_info) {
 
             /* Strings: use values from metadata.ini if present (UTF-8). We copy into fixed buffers. */
             const char *s;
-            s = mini_get_string(meta_ini, "metadata", "name", NULL);
-            if (!s) s = mini_get_string(meta_ini, "meta", "name", NULL);
+            s = mini_get_string(meta_ini, "meta", "name", NULL);
             if (s) strncpy(rom_info->metadata.name, s, sizeof(rom_info->metadata.name) - 1);
 
-            s = mini_get_string(meta_ini, "metadata", "author", NULL);
-            if (!s) s = mini_get_string(meta_ini, "meta", "author", NULL);
+            s = mini_get_string(meta_ini, "meta", "author", NULL);
             if (s) strncpy(rom_info->metadata.author, s, sizeof(rom_info->metadata.author) - 1);
 
-            s = mini_get_string(meta_ini, "metadata", "release-date", NULL);
-            if (!s) s = mini_get_string(meta_ini, "meta", "release-date", NULL);
+            s = mini_get_string(meta_ini, "meta", "release-date", NULL);
             if (s) strncpy(rom_info->metadata.release_date, s, sizeof(rom_info->metadata.release_date) - 1);
 
-            s = mini_get_string(meta_ini, "metadata", "website", NULL);
-            if (!s) s = mini_get_string(meta_ini, "meta", "website", NULL);
+            s = mini_get_string(meta_ini, "meta", "website", NULL);
             if (s) strncpy(rom_info->metadata.website, s, sizeof(rom_info->metadata.website) - 1);
 
-            s = mini_get_string(meta_ini, "metadata", "short_desc", NULL);
-            if (!s) s = mini_get_string(meta_ini, "meta", "short_desc", NULL);
+            s = mini_get_string(meta_ini, "meta", "short_desc", NULL);
             if (s) strncpy(rom_info->metadata.short_desc, s, sizeof(rom_info->metadata.short_desc) - 1);
 
-            s = mini_get_string(meta_ini, "metadata", "long_desc", NULL);
-            if (!s) s = mini_get_string(meta_ini, "meta", "long_desc", NULL);
+            s = mini_get_string(meta_ini, "meta", "long_desc", NULL);
             if (s) {
                 /* long_desc is a filename pointing to a .txt file
                    inside the metadata ZIP. Try to extract that file and load its
