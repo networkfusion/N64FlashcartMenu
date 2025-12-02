@@ -17,7 +17,7 @@
  * ROM and return a loaded mini_t * (caller must mini_free it). Returns NULL
  * on failure.
  */
-mini_t *metadata_load_from_meta_or_embedded(path_t *rom_path) {
+mini_t *homebrew_rom_metadata_load_from_meta_or_embedded(path_t *rom_path) {
     if (!path_has_value(rom_path)) {
         return NULL;
     }

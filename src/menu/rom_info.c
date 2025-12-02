@@ -815,7 +815,7 @@ static void load_rom_config_from_file (path_t *path, rom_info_t *rom_info) {
 
     /* Try to load metadata.ini from .meta (external) or embedded ZIP and merge */
     {
-        mini_t *meta_ini = metadata_load_from_meta_or_embedded(path);
+        mini_t *meta_ini = homebrew_rom_metadata_load_from_meta_or_embedded(path);
         if (meta_ini) {
             /* Support both [metadata] and [meta] groups in case of different sources */
             int esrb_from_meta = (int) mini_get_int(meta_ini, "metadata", "esrb_age_rating", rom_info->metadata.esrb_age_rating);
