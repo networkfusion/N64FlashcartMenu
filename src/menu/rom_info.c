@@ -14,6 +14,7 @@
 #include "boot/cic.h"
 #include "rom_info.h"
 #include "utils/fs.h"
+#include "rom_metadata_reader.h"
 
 
 #define SWAP_VARS(x0, x1)       { typeof(x0) tmp = (x0); (x0) = (x1); (x1) = (tmp); }
@@ -756,6 +757,20 @@ static void extract_rom_info (match_t *match, rom_header_t *rom_header, rom_info
     }
 
     rom_info->metadata.esrb_age_rating = ROM_ESRB_AGE_RATING_NONE;
+    rom_info->metadata.name[0] = '\0';
+    rom_info->metadata.author[0] = '\0';
+    rom_info->metadata.release_date[0] = '\0';
+    rom_info->metadata.website[0] = '\0';
+    rom_info->metadata.short_desc[0] = '\0';
+    rom_info->metadata.long_desc[0] = '\0';
+    rom_info->metadata.boxart_front[0] = '\0';
+    rom_info->metadata.boxart_back[0] = '\0';
+    rom_info->metadata.boxart_left[0] = '\0';
+    rom_info->metadata.boxart_right[0] = '\0';
+    rom_info->metadata.boxart_top[0] = '\0';
+    rom_info->metadata.boxart_bottom[0] = '\0';
+    rom_info->metadata.gamepak_front[0] = '\0';
+    rom_info->metadata.gamepak_back[0] = '\0';
     rom_info->settings.cheats_enabled = false;
     rom_info->settings.patches_enabled = false;
 }
@@ -796,6 +811,67 @@ static void load_rom_config_from_file (path_t *path, rom_info_t *rom_info) {
         }
 
         mini_free(rom_config_ini);
+    }
+
+    /* Try to load metadata.ini from .meta (external) or embedded ZIP and merge */
+    {
+        mini_t *meta_ini = metadata_load_from_meta_or_embedded(path);
+        if (meta_ini) {
+            /* Support both [metadata] and [meta] groups in case of different sources */
+            int esrb_from_meta = (int) mini_get_int(meta_ini, "metadata", "esrb_age_rating", rom_info->metadata.esrb_age_rating);
+            if (esrb_from_meta == rom_info->metadata.esrb_age_rating) {
+                /* try alternate group name */
+                esrb_from_meta = (int) mini_get_int(meta_ini, "meta", "esrb_age_rating", rom_info->metadata.esrb_age_rating);
+            }
+            rom_info->metadata.esrb_age_rating = (rom_esrb_age_rating_t) esrb_from_meta;
+
+            /* Strings: use values from metadata.ini if present (UTF-8). We copy into fixed buffers. */
+            const char *s;
+            s = mini_get_string(meta_ini, "metadata", "name", NULL);
+            if (!s) s = mini_get_string(meta_ini, "meta", "name", NULL);
+            if (s) strncpy(rom_info->metadata.name, s, sizeof(rom_info->metadata.name) - 1);
+
+            s = mini_get_string(meta_ini, "metadata", "author", NULL);
+            if (!s) s = mini_get_string(meta_ini, "meta", "author", NULL);
+            if (s) strncpy(rom_info->metadata.author, s, sizeof(rom_info->metadata.author) - 1);
+
+            s = mini_get_string(meta_ini, "metadata", "release-date", NULL);
+            if (!s) s = mini_get_string(meta_ini, "meta", "release-date", NULL);
+            if (s) strncpy(rom_info->metadata.release_date, s, sizeof(rom_info->metadata.release_date) - 1);
+
+            s = mini_get_string(meta_ini, "metadata", "website", NULL);
+            if (!s) s = mini_get_string(meta_ini, "meta", "website", NULL);
+            if (s) strncpy(rom_info->metadata.website, s, sizeof(rom_info->metadata.website) - 1);
+
+            s = mini_get_string(meta_ini, "metadata", "short_desc", NULL);
+            if (!s) s = mini_get_string(meta_ini, "meta", "short_desc", NULL);
+            if (s) strncpy(rom_info->metadata.short_desc, s, sizeof(rom_info->metadata.short_desc) - 1);
+
+            s = mini_get_string(meta_ini, "metadata", "long_desc", NULL);
+            if (!s) s = mini_get_string(meta_ini, "meta", "long_desc", NULL);
+            if (s) strncpy(rom_info->metadata.long_desc, s, sizeof(rom_info->metadata.long_desc) - 1);
+
+            /* Boxart/cartart filenames (section [boxart] and [cartart]) */
+            s = mini_get_string(meta_ini, "boxart", "front", NULL);
+            if (s) strncpy(rom_info->metadata.boxart_front, s, sizeof(rom_info->metadata.boxart_front) - 1);
+            s = mini_get_string(meta_ini, "boxart", "back", NULL);
+            if (s) strncpy(rom_info->metadata.boxart_back, s, sizeof(rom_info->metadata.boxart_back) - 1);
+            s = mini_get_string(meta_ini, "boxart", "left", NULL);
+            if (s) strncpy(rom_info->metadata.boxart_left, s, sizeof(rom_info->metadata.boxart_left) - 1);
+            s = mini_get_string(meta_ini, "boxart", "right", NULL);
+            if (s) strncpy(rom_info->metadata.boxart_right, s, sizeof(rom_info->metadata.boxart_right) - 1);
+            s = mini_get_string(meta_ini, "boxart", "top", NULL);
+            if (s) strncpy(rom_info->metadata.boxart_top, s, sizeof(rom_info->metadata.boxart_top) - 1);
+            s = mini_get_string(meta_ini, "boxart", "bottom", NULL);
+            if (s) strncpy(rom_info->metadata.boxart_bottom, s, sizeof(rom_info->metadata.boxart_bottom) - 1);
+
+            s = mini_get_string(meta_ini, "cartart", "front", NULL);
+            if (s) strncpy(rom_info->metadata.gamepak_front, s, sizeof(rom_info->metadata.gamepak_front) - 1);
+            s = mini_get_string(meta_ini, "cartart", "back", NULL);
+            if (s) strncpy(rom_info->metadata.gamepak_back, s, sizeof(rom_info->metadata.gamepak_back) - 1);
+
+            mini_free(meta_ini);
+        }
     }
 
     path_free(rom_info_path);

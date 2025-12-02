@@ -5,6 +5,12 @@
  */
 
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <strings.h>
+
+#include <miniz.h>
+#include <miniz_zip.h>
 
 #include "../ui_components.h"
 #include "../path.h"
@@ -42,7 +48,7 @@ static void png_decoder_callback(png_err_t err, surface_t *decoded_image, void *
  * @param current_image_view The current image view type (front, back, etc.).
  * @return Pointer to the initialized boxart component, or NULL on failure.
  */
-component_boxart_t *ui_components_boxart_init(const char *storage_prefix, const char *game_code, const char *rom_title, file_image_type_t current_image_view) {
+component_boxart_t *ui_components_boxart_init(const char *storage_prefix, const char *game_code, const char *rom_title, file_image_type_t current_image_view, path_t *rom_path) {
     component_boxart_t *b;
     char boxart_path[32];
 
@@ -113,6 +119,68 @@ component_boxart_t *ui_components_boxart_init(const char *storage_prefix, const 
             default:
                 path_push(path, "boxart_front.png");
                 break;
+        }
+        /* First, if rom_path was provided, try to extract this filename from
+         * an external .meta file or an embedded ZIP, and write it into the
+         * metadata directory so the PNG decoder can read it. */
+        if (rom_path) {
+            mz_zip_archive zip;
+            memset(&zip, 0, sizeof(zip));
+            const char *zip_candidate = NULL;
+
+            path_t *meta_path = path_clone(rom_path);
+            path_ext_replace(meta_path, "meta");
+
+            if (file_exists(path_get(meta_path))) {
+                zip_candidate = path_get(meta_path);
+            } else {
+                /* check embedded flag */
+                FILE *f = fopen(path_get(rom_path), "rb");
+                if (f) {
+                    if (fseek(f, 0x38, SEEK_SET) == 0) {
+                        int bflag = fgetc(f);
+                        if (bflag != EOF && (bflag & 0x01)) {
+                            zip_candidate = path_get(rom_path);
+                        }
+                    }
+                    fclose(f);
+                }
+            }
+
+            if (zip_candidate) {
+                if (mz_zip_reader_init_file(&zip, zip_candidate, 0)) {
+                    int fi = mz_zip_reader_locate_file(&zip, path_last_get(path), NULL, 0);
+                    if (fi < 0) {
+                        /* try matching only the basename (in case zip contains paths) */
+                        const int nfiles = (int)mz_zip_reader_get_num_files(&zip);
+                        for (int i = 0; i < nfiles; ++i) {
+                            mz_zip_archive_file_stat st;
+                            if (!mz_zip_reader_file_stat(&zip, i, &st)) continue;
+                            const char *fname = st.m_filename;
+                            const char *base = strrchr(fname, '/');
+                            base = base ? base + 1 : fname;
+                            if (strcmp(base, path_last_get(path)) == 0) { fi = i; break; }
+                        }
+                    }
+
+                    if (fi >= 0) {
+                        /* ensure directory exists */
+                        path_t *dirpath = path_clone(path);
+                        path_pop(dirpath);
+                        if (!directory_exists(path_get(dirpath))) {
+                            directory_create(path_get(dirpath));
+                        }
+                        /* extract to file path (path currently points to target file) */
+                        if (mz_zip_reader_extract_to_file(&zip, fi, path_get(path), 0)) {
+                            /* successfully wrote file from zip */
+                        }
+                        path_free(dirpath);
+                    }
+                    mz_zip_reader_end(&zip);
+                }
+            }
+
+            path_free(meta_path);
         }
 
         if (file_exists(path_get(path))) { 

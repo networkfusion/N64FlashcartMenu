@@ -177,6 +177,21 @@ typedef struct {
 
     struct {
         rom_esrb_age_rating_t esrb_age_rating; /**< The game age rating */
+        char name[64];               /**< UTF-8 game name from metadata.ini */
+        char author[64];             /**< Author/publisher */
+        char release_date[12];       /**< YYYY-MM-DD */
+        char website[128];           /**< Website URL */
+        char short_desc[128];        /**< Short description (display) */
+        char long_desc[512];         /**< Long description */
+        /* Filenames referenced in metadata ZIP (or external) */
+        char boxart_front[64];
+        char boxart_back[64];
+        char boxart_left[64];
+        char boxart_right[64];
+        char boxart_top[64];
+        char boxart_bottom[64];
+        char gamepak_front[64];
+        char gamepak_back[64];
     } metadata;                     /**< The ROM metadata */
 } rom_info_t;
 

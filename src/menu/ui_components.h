@@ -264,7 +264,9 @@ typedef struct {
  * @param current_image_view Current image view type.
  * @return Pointer to the initialized box art component.
  */
-component_boxart_t *ui_components_boxart_init(const char *storage_prefix, const char *game_code, const char *rom_title, file_image_type_t current_image_view);
+/* rom_path may be NULL. If provided, the function will attempt to extract
+ * images from an external .meta ZIP or an embedded ZIP inside the ROM. */
+component_boxart_t *ui_components_boxart_init(const char *storage_prefix, const char *game_code, const char *rom_title, file_image_type_t current_image_view, path_t *rom_path);
 
 /**
  * @brief Free the box art component resources.

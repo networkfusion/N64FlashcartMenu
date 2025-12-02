@@ -312,7 +312,8 @@ static void iterate_metadata_image(menu_t *menu, int direction) {
                 menu->storage_prefix,
                 menu->load.rom_info.game_code,
                 menu->load.rom_info.title,
-                metadata_image_filename_cache[new_metadata_image_index]
+                metadata_image_filename_cache[new_metadata_image_index],
+                menu->load.rom_path
             );
 
             if (new_boxart != NULL) {
@@ -658,7 +659,7 @@ void view_load_rom_init (menu_t *menu) {
     if (!menu->settings.rom_autoload_enabled) {
 #endif
         current_metadata_image_index = 0;
-        boxart = ui_components_boxart_init(menu->storage_prefix, menu->load.rom_info.game_code, menu->load.rom_info.title, IMAGE_BOXART_FRONT);
+        boxart = ui_components_boxart_init(menu->storage_prefix, menu->load.rom_info.game_code, menu->load.rom_info.title, IMAGE_BOXART_FRONT, menu->load.rom_path);
         ui_components_context_menu_init(&options_context_menu);
 #ifdef FEATURE_AUTOLOAD_ROM_ENABLED
     }
