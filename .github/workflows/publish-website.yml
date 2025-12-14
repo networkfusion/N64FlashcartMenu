@@ -1,8 +1,11 @@
-# Trigger the action on push to main
+# Trigger the action
 on:
+  pull_request:
   push:
     branches:
       - main
+      - develop
+      - docs-prerelease
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
@@ -20,29 +23,28 @@ jobs:
   publish-docs:
     environment:
       name: github-pages
-      url: menu.summercart64.dev # url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url }}/N64FlashcartMenu/
+
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v6
-    - name: Dotnet Setup
-      uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: 8.x
 
-    - name: Run Doxygen to generate API docs
-      uses: mattnotmitt/doxygen-action@v1
+    - name: Build N64FlashcartMenu ROM
+      uses: devcontainers/ci@v0.3
       with:
-        doxyfile-path: './Doxyfile'
-
-    - run: dotnet tool update -g docfx
-    - run: docfx docfx.json
+        configFile: .devcontainer/doc-builder/devcontainer.json
+        runCmd: |
+          doxygen
+          docfx docfx.json
 
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v4
       with:
         # Upload entire docfx site folder
         path: '_site'
+
     - name: Deploy to GitHub Pages
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/docs-prerelease'
       id: deployment
       uses: actions/deploy-pages@v4

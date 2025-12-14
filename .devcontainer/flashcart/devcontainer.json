@@ -1,5 +1,5 @@
 {
-    "name": "N64FlashcartMenu-sc64deployer",
+    "name": "N64FlashcartMenu-flashcart-devcontainer",
     "build": {
         "dockerfile": "Dockerfile.sc64deployer"
     },
