@@ -26,12 +26,25 @@ typedef enum {
 
 static flashcart_firmware_version_t ed64_vseries_get_firmware_version (void) {
     flashcart_firmware_version_t version_info;
-    // FIXME: get version from ll
-    version_info.major = 1;
-    version_info.minor = 1;
-    version_info.revision = 0;
 
-    //ed64_ll_get_version(&version_info.major, &version_info.minor, &version_info.revision);
+    ed64_vseries_ll_get_cpld_version(&cpld_version);
+
+    if ((cpld_version & 0xF000)) == CPLD_VERSION_3_0) {
+        version_info.major = 3;
+        version_info.minor = 0;
+    } else if ((cpld_version & 0xF000) == CPLD_VERSION_2_5) {
+        version_info.major = 2;
+        version_info.minor = 5;
+    } else if ((cpld_version & 0xF000) == CPLD_VERSION_2_0) {
+        version_info.major = 2;
+        version_info.minor = 0;
+    } else {
+        version_info.major = 0;
+    }
+
+    uint16_t fpga_version;
+    ed64_vseries_ll_get_fpga_version(&fpga_version);
+    version_info.revision = fpga_version;
 
     return version_info;
 }
@@ -45,7 +58,18 @@ static flashcart_err_t ed64_vseries_deinit (void) {
 }
 
 static ed64_vseries_device_variant_t get_cart_model() {
-    ed64_vseries_device_variant_t variant = ED64_V1_0; // FIXME: check cart model from ll for better feature handling.
+    ed64_vseries_device_variant_t variant;
+    ed64_vseries_ll_get_cpld_version(&cpld_version);
+
+    if ((cpld_version & 0xF000)) == CPLD_VERSION_3_0) {
+        return ED64_V3_0;
+    } else if ((cpld_version & 0xF000) == CPLD_VERSION_2_5) {
+        return ED64_V2_5;
+    } else if ((cpld_version & 0xF000) == CPLD_VERSION_2_0) {
+        return ED64_V2_0;
+    } else {
+        return ED64_V1_0;
+    }
     return variant;
 }
 
