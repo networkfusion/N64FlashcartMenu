@@ -30,20 +30,20 @@
 // #define ED_V_3_FL_ADDR_REG        (ED_V_BASE_REG+0x50)
 // #define ED_V_3_FL_DATA_REG        (ED_V_BASE_REG+0x54)
 
-/** @brief CPLD Variant Enumeration. */
+/** @brief CPLD Version Enumeration. */
 typedef enum {
     CPLD_VERSION_3_0      = 0x3000, /**< Device variant 3 */
     CPLD_VERSION_2_5      = 0x2000, /**< Device variant 2.5 */
-    CPLD_VARIANT_2_0      = 0x0000, /**< Device variant 2 or below */
+    CPLD_VERSION_2_0      = 0x0000, /**< Device variant 2 or below */
 } ed64_vseries_cpld_version_t;
 
 /**
  * @brief Get the ED64 V series cpld version.
  * 
- * @param cpld_version Pointer to store the device variant.
+ * @param cpld_version Pointer to store the cpld version.
  * @return true if successful, false otherwise.
  */
-bool ed64_vseries_ll_get_cpld_version(ed64_vseries_cpld_version_t *cpld_version);
+bool ed64_vseries_ll_get_cpld_version(uint16_t *cpld_version);
 
 /**
  * @brief Get the ED64 V series fpga version.

@@ -10,7 +10,7 @@
 #include "ed64_vseries_ll.h"
 
 
-bool ed64_vseries_ll_get_cpld_version (ed64_vseries_cpld_version_t *cpld_version) {
+bool ed64_vseries_ll_get_cpld_version (uint16_t *cpld_version) {
     uint16_t ver;
     uint16_t cfg;
     cfg = io_read(ED_V_CFG_REG);

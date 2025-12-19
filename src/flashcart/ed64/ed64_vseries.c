@@ -26,10 +26,10 @@ typedef enum {
 
 static flashcart_firmware_version_t ed64_vseries_get_firmware_version (void) {
     flashcart_firmware_version_t version_info;
-
+    uint16_t cpld_version;
     ed64_vseries_ll_get_cpld_version(&cpld_version);
 
-    if ((cpld_version & 0xF000)) == CPLD_VERSION_3_0) {
+    if ((cpld_version & 0xF000) == CPLD_VERSION_3_0) {
         version_info.major = 3;
         version_info.minor = 0;
     } else if ((cpld_version & 0xF000) == CPLD_VERSION_2_5) {
@@ -59,9 +59,10 @@ static flashcart_err_t ed64_vseries_deinit (void) {
 
 static ed64_vseries_device_variant_t get_cart_model() {
     ed64_vseries_device_variant_t variant;
+    uint16_t cpld_version;
     ed64_vseries_ll_get_cpld_version(&cpld_version);
 
-    if ((cpld_version & 0xF000)) == CPLD_VERSION_3_0) {
+    if ((cpld_version & 0xF000) == CPLD_VERSION_3_0) {
         return ED64_V3_0;
     } else if ((cpld_version & 0xF000) == CPLD_VERSION_2_5) {
         return ED64_V2_5;
