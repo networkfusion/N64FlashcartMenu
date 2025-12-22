@@ -37,6 +37,17 @@ typedef enum {
     CPLD_VERSION_2_0      = 0x0000, /**< Device variant 2 or below */
 } ed64_vseries_cpld_version_t;
 
+/** @brief Save Type Enumeration. */
+typedef enum {
+    SAVE_TYPE_NONE, /**< No save type */
+    SAVE_TYPE_EEPROM_4KBIT, /**< EEPROM 4Kbit */
+    SAVE_TYPE_EEPROM_16KBIT, /**< EEPROM 16Kbit */
+    SAVE_TYPE_SRAM_256KBIT, /**< SRAM 256Kbit */
+    SAVE_TYPE_SRAM_BANKED, /**< SRAM Banked */
+    SAVE_TYPE_SRAM_1MBIT, /**< FlashRAM 1Mbit */
+    SAVE_TYPE_FLASHRAM_1MBIT, /**< FlashRAM 1Mbit */
+} ed64_vseries_save_type_t;
+
 /**
  * @brief Get the ED64 V series cpld version.
  * 
@@ -52,6 +63,15 @@ bool ed64_vseries_ll_get_cpld_version(uint16_t *cpld_version);
  * @return true if successful, false otherwise.
  */
 bool ed64_vseries_ll_get_fpga_version(uint16_t *fpga_version);
+
+/**
+ * @brief Set the save type.
+ * 
+ * @param type The save type to set.
+ * @param use_ram_bank Whether to use RAM banked mode.
+ * @return true if successful, false otherwise.
+ */
+bool ed64_vseries_ll_set_save_type(ed64_vseries_save_type_t type, bool use_ram_bank);
 
 
 /** @} */ /* ed64_vseries_ll */
