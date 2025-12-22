@@ -23,10 +23,10 @@
 // 16 reserved
 #define ED_V_CFG_RTC_ON (1 << 5) // 32
 // 64 reserved
-//#define ED_V_CFG_GPIO_ON (1 << 6) // 96 - this is strange...
+//#define ED_V_CFG_GPIO_ON (1 << 6) // 96 - this is strange... TODO: how to correctly use?
 // 128 reserved
-#define ED_V_CFG_DD_ON (1 << 8) // 256
-#define ED_V_CFG_DD_WE (1 << 9) // 512
+#define ED_V_CFG_DD_CC_ON (1 << 8) // 256 // handle cart rom dd-cart conversion rom
+#define ED_V_CFG_DD_CC_WE (1 << 9) // 512
 
 
 bool ed64_vseries_ll_get_cpld_version (uint16_t *cpld_version) {
@@ -86,9 +86,11 @@ bool ed64_vseries_ll_set_save_type(ed64_vseries_save_type_t type, bool use_confi
         case SAVE_TYPE_FLASHRAM_1MBIT:
             save_cfg |= ED_V_SAV_SRM_SIZE_LARGE;
             break;
-        default:
-            config_ram_bank_enable = true;
-            break;
+        case SAVE_TYPE_NONE:
+        break;
+        // default:
+        //     config_ram_bank_enable = true;
+        //     break;
     }
     
     if (config_ram_bank_enable) { save_cfg |= ED_V_SAV_RAM_BANK_ON; }
@@ -100,3 +102,34 @@ bool ed64_vseries_ll_set_save_type(ed64_vseries_save_type_t type, bool use_confi
     // TODO: verify write
     return false; // false on success
 }
+
+// void ed64_vseries_ll_v3_dd_cc_ram_oe(void) {
+
+//     uint16_t cfg = io_read(ED_V_CFG_REG);
+//     cfg &= ~ED_V_CFG_DD_CC_WE;
+//     cfg |= ED_V_CFG_DD_CC_ON;
+//     io_write(ED_V_CFG_REG, cfg);
+// }
+
+// void ed64_vseries_ll_v3_dd_cc_ram_we(void) {
+
+//     uint16_t cfg = io_read(ED_V_CFG_REG);
+//     cfg |= ED_V_CFG_DD_ON | ED_V_CFG_DD_CC_WE;
+//     io_write(ED_V_CFG_REG, cfg);
+// }
+
+// void ed64_vseries_ll_v3_dd_cc_ram_off(void) {
+
+//     uint16_t cfg = io_read(ED_V_CFG_REG);
+//     cfg &= ~(ED_V_CFG_ON | ED_V_CFG_DD_CC_WE);
+//     io_write(ED_V_CFG_REG, cfg);
+// }
+
+// void ed64_vseries_ll_v3_dd_cc_ram_clr(void) {
+
+//     uint16_t cfg = io_read(ED_V_CFG_REG);
+//     cfg |= ED_V_CFG_DD_CC_WE;
+//     cfg &= ~ED_V_CFG_DD_CC_ON;
+//     io_write(ED_V_CFG_REG, cfg);
+//     sleep(100);
+// }
