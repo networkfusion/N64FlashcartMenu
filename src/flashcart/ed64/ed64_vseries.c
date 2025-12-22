@@ -84,6 +84,7 @@ static flashcart_err_t ed64_vseries_init (void) {
     // }
 
     // // Probably need to re-initialize after firmware update
+    ed64_vseries_ll_v3_enable_rtc();
 
     return FLASHCART_OK;
 }

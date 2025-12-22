@@ -16,6 +16,18 @@
 #define ED_V_SAV_RAM_BANK_ON      (1 << 7)
 #define ED_V_SAV_RAM_BANK_APPLY   (1 << 15)
 
+#define ED_V_CFG_SDRAM_ON (1 << 0) // 1
+#define ED_V_CFG_SWAP (1 << 1) // 2
+#define ED_V_CFG_WR_MOD (1 << 2) // 4
+#define ED_V_CFG_WR_ADDR_MASK (1 << 3) // 8
+// 16 reserved
+#define ED_V_CFG_RTC_ON (1 << 5) // 32
+// 64 reserved
+//#define ED_V_CFG_GPIO_ON (1 << 6) // 96 - this is strange...
+// 128 reserved
+#define ED_V_CFG_DD_ON (1 << 8) // 256
+#define ED_V_CFG_DD_WE (1 << 9) // 512
+
 
 bool ed64_vseries_ll_get_cpld_version (uint16_t *cpld_version) {
     uint16_t ver;
@@ -37,52 +49,50 @@ bool ed64_vseries_ll_get_fpga_version (uint16_t *fpga_version) {
     return true;
 }
 
+void ed64_vseries_ll_v3_enable_rtc (void) {
+    uint16_t cfg;
+    cfg = io_read(ED_V_CFG_REG);
+    //cfg &= ~ED_V_CFG_GPIO_ON;
+    cfg |= ED_V_CFG_RTC_ON;
+    io_write(ED_V_CFG_REG, cfg);
+}
+
 // void ed64_vseries_ll_v3_write(uint16_t address, uint8_t *data) {
 //     io_write(ED_V_3_FL_ADDR_REG, address);
 //     io_write(ED_V_3_FL_DATA_REG, data);
 // }
 
-bool ed64_vseries_ll_set_save_type(ed64_vseries_save_type_t type, bool use_ram_bank) {
+bool ed64_vseries_ll_set_save_type(ed64_vseries_save_type_t type, bool use_config_ram_bank) {
 
     uint32_t save_cfg = 0;
-    bool eeprom_on = false;
-    bool sram_on = false;
-    bool eeprom_size_large = false;
-    bool sram_size_large = false;
-    bool config_ram_bank_enable = !use_ram_bank;
+    bool config_ram_bank_enable = !use_config_ram_bank;
 
     switch (type) {
         case SAVE_TYPE_EEPROM_16KBIT:
-            eeprom_on = true;
-            eeprom_size_large = true;
+            save_cfg |= ED_V_SAV_EEP_ON;
+            save_cfg |= ED_V_SAV_EEP_SIZE_LARGE;
             break;
         case SAVE_TYPE_EEPROM_4KBIT:
-            eeprom_on = true;
+            save_cfg |= ED_V_SAV_EEP_ON;
             break;
         case SAVE_TYPE_SRAM_256KBIT:
-            sram_on = true;
+            save_cfg |= ED_V_SAV_SRM_ON;
             break;
         case SAVE_TYPE_SRAM_BANKED:
         case SAVE_TYPE_SRAM_1MBIT:
-            sram_on = true;
-            sram_size_large = true;
+            save_cfg |= ED_V_SAV_SRM_ON;
+            save_cfg |= ED_V_SAV_SRM_SIZE_LARGE;
             break;
         case SAVE_TYPE_FLASHRAM_1MBIT:
-            sram_on = false;
-            sram_size_large = true;
+            save_cfg |= ED_V_SAV_SRM_SIZE_LARGE;
             break;
         default:
-            sram_on = false;
-            sram_size_large = false;
             config_ram_bank_enable = true;
             break;
     }
     
-    if (eeprom_on) { save_cfg |= ED_V_SAV_EEP_ON; }
-    if (sram_on) { save_cfg |= ED_V_SAV_SRM_ON; }
-    if (eeprom_size_large) { save_cfg |= ED_V_SAV_EEP_SIZE_LARGE; }
-    if (sram_size_large) { save_cfg |= ED_V_SAV_SRM_SIZE_LARGE; }
     if (config_ram_bank_enable) { save_cfg |= ED_V_SAV_RAM_BANK_ON; }
+
     save_cfg |= ED_V_SAV_RAM_BANK_APPLY;
 
     io_write(ED_V_SAV_CFG_REG, save_cfg);

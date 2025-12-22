@@ -73,6 +73,11 @@ bool ed64_vseries_ll_get_fpga_version(uint16_t *fpga_version);
  */
 bool ed64_vseries_ll_set_save_type(ed64_vseries_save_type_t type, bool use_ram_bank);
 
+/**
+ * @brief Enable the RTC on ED64 V series v3 carts.
+ */
+void ed64_vseries_ll_v3_enable_rtc (void);
+
 
 /** @} */ /* ed64_vseries_ll */
 
