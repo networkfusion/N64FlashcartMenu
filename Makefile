@@ -30,6 +30,7 @@ SRCS = \
 	flashcart/64drive/64drive.c \
 	flashcart/flashcart_utils.c \
 	flashcart/ed64/ed64_vseries_ll.c \
+	flashcart/ed64/ed64_vseries_state.c \
 	flashcart/ed64/ed64_vseries.c \
 	flashcart/ed64/ed64_xseries.c \
 	flashcart/flashcart.c \
