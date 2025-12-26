@@ -5,7 +5,7 @@
 #include "utils/fs.h"
 
 #ifndef ED64_VSERIES_STATE_FILE_PATH
-#define ED64_VSERIES_STATE_FILE_PATH  "sd:/menu/ed64_vseries_state.ini"
+#define ED64_VSERIES_STATE_FILE_PATH  "sd:/menu/ed64_vseries_state.ini" // TODO: just save to config.ini?
 #endif
 
 static ed64_vseries_pseudo_writeback_t init = {
