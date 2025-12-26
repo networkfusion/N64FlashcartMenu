@@ -12,6 +12,7 @@
 /filesystem/FiraMonoBold.font64
 /filesystem/*.wav64
 /filesystem/*.sprite
+/filesystem/*.rbf
 
 # Ignore external development tools
 /tools/*
