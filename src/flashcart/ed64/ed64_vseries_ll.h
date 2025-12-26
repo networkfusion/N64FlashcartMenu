@@ -7,7 +7,7 @@
 #ifndef FLASHCART_ED64_VSERIES_LL_H__
 #define FLASHCART_ED64_VSERIES_LL_H__
 
-#define ED_V_BASE_REG             0x08040000
+#define ED_V_BASE_REG             0xA8040000 // Base address for ED64 V series registers should be 0x08040000 ideally.
 
 #define ED_V_CFG_REG              (ED_V_BASE_REG+0x00)
 #define ED_V_STATUS_REG           (ED_V_BASE_REG+0x04)
@@ -21,14 +21,14 @@
 #define ED_V_SAV_CFG_REG          (ED_V_BASE_REG+0x24)
 #define ED_V_SEC_REG              (ED_V_BASE_REG+0x28)
 #define ED_V_VER_REG              (ED_V_BASE_REG+0x2C)
-//#define ED_V_GPIO_REG             (ED_V_BASE_REG+0x30)
+#define ED_V_GPIO_REG             (ED_V_BASE_REG+0x30)
 
 #define ED_V_CFG_CNT_REG          (ED_V_BASE_REG+0x40)
 #define ED_V_CFG_DAT_REG          (ED_V_BASE_REG+0x44)
 #define ED_V_MAX_MSG_REG          (ED_V_BASE_REG+0x48)
 #define ED_V_MAX_VER_REG          (ED_V_BASE_REG+0x4C)
-// #define ED_V_3_FL_ADDR_REG        (ED_V_BASE_REG+0x50)
-// #define ED_V_3_FL_DATA_REG        (ED_V_BASE_REG+0x54)
+#define ED_V_3_FLA_ADDR_REG       (ED_V_BASE_REG+0x50)
+#define ED_V_3_FLA_DATA_REG       (ED_V_BASE_REG+0x54)
 
 /** @brief CPLD Version Enumeration. */
 typedef enum {
@@ -74,10 +74,64 @@ bool ed64_vseries_ll_get_fpga_version(uint16_t *fpga_version);
 bool ed64_vseries_ll_set_save_type(ed64_vseries_save_type_t type, bool use_ram_bank);
 
 /**
+ * @brief Enable the GPIO on ED64 V series carts.
+ */
+void ed64_vseries_ll_enable_gpio(void);
+
+/**
+ * @brief Disable the GPIO on ED64 V series carts.
+ */
+void ed64_vseries_ll_disable_gpio(void);
+
+/**
  * @brief Enable the RTC on ED64 V series v3 carts.
  */
 void ed64_vseries_ll_v3_enable_rtc (void);
 
+
+/**
+ * @brief Update the firmware of the ED64 V series cart.
+ * 
+ * @param firmware_data Pointer to the firmware data.
+ */
+void ed64_vseries_ll_update_firmware(uint8_t *firmware_data);
+
+
+/**
+ * @brief Read a message from the ED64 V series cart.
+ * 
+ * @return The message data read.
+ */
+uint16_t ed64_vseries_ll_message_read(void);
+
+/**
+ * @brief Write a message to the ED64 V series cart.
+ * 
+ * @param data The message data to write.
+ */
+void ed64_vseries_ll_message_write(uint16_t data);
+
+/**
+ * @brief Enable the DD cart conversion RAM output enable.
+ */
+void ed64_vseries_ll_dd_cc_ram_oe(void);
+
+/**
+ * @brief Enable the DD cart conversion RAM write enable.
+ */
+void ed64_vseries_ll_dd_cc_ram_we(void);
+
+/**
+ * @brief Disable the DD cart conversion RAM.
+ */
+void ed64_vseries_ll_dd_cc_ram_off(void);
+
+/**
+ * @brief Check if DD cart conversion RAM is supported.
+ * 
+ * @return true if supported, false otherwise.
+ */
+bool ed64_vseries_ll_dd_ram_supported(void);
 
 /** @} */ /* ed64_vseries_ll */
 
