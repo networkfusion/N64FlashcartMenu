@@ -33,7 +33,6 @@ typedef enum {
 static ed64_vseries_pseudo_writeback_t current_state;
 static ed64_vseries_save_type_t current_save_type = SAVE_TYPE_NONE;
 
-//extern int ed_exit (void);
 
 static ed64_vseries_device_variant_t get_cart_model() {
     ed64_vseries_device_variant_t variant;
@@ -89,25 +88,25 @@ static flashcart_err_t ed64_vseries_pseudo_save_writeback(void) {
         // FIL fil;
         // UINT bw;
 
-        switch ((ed64_vseries_save_type_t) current_state.last_save_type) {
-            case SAVE_TYPE_EEPROM_4KBIT:
-                // int result4k = eepfs_init((void *) (EEPROM_ADDRESS), 1);
-                // eepfs_read((void *) (EEPROM_ADDRESS), strip_fs_prefix(current_state.last_save_path), 64);
-                break;
-            case SAVE_TYPE_EEPROM_16KBIT:
-                // int result16k = eepfs_init((void *) (EEPROM_ADDRESS), 1);
-                // eepfs_read((void *) (EEPROM_ADDRESS), strip_fs_prefix(current_state.last_save_path), 256);
-                break;
-            case SAVE_TYPE_SRAM_256KBIT:
-            case SAVE_TYPE_FLASHRAM_1MBIT:
-            case SAVE_TYPE_SRAM_BANKED:
-            case SAVE_TYPE_SRAM_1MBIT:
-                //address = (void *) (SRAM_FLASHRAM_ADDRESS);
-                break;
-            case SAVE_TYPE_NONE:
-            default:
-                return FLASHCART_ERR_ARGS;
-        }
+        // switch ((ed64_vseries_save_type_t) current_state.last_save_type) {
+        //     case SAVE_TYPE_EEPROM_4KBIT:
+        //         // int result4k = eepfs_init((void *) (EEPROM_ADDRESS), 1);
+        //         // eepfs_read((void *) (EEPROM_ADDRESS), strip_fs_prefix(current_state.last_save_path), 64);
+        //         break;
+        //     case SAVE_TYPE_EEPROM_16KBIT:
+        //         // int result16k = eepfs_init((void *) (EEPROM_ADDRESS), 1);
+        //         // eepfs_read((void *) (EEPROM_ADDRESS), strip_fs_prefix(current_state.last_save_path), 256);
+        //         break;
+        //     case SAVE_TYPE_SRAM_256KBIT:
+        //     case SAVE_TYPE_FLASHRAM_1MBIT:
+        //     case SAVE_TYPE_SRAM_BANKED:
+        //     case SAVE_TYPE_SRAM_1MBIT:
+        //         //address = (void *) (SRAM_FLASHRAM_ADDRESS);
+        //         break;
+        //     case SAVE_TYPE_NONE:
+        //     default:
+        //         return FLASHCART_ERR_ARGS;
+        // }
 
         // if (f_open(&fil, strip_fs_prefix(current_state.last_save_path), FA_WRITE) != FR_OK) {
         //     return FLASHCART_ERR_LOAD;
@@ -156,30 +155,29 @@ static flashcart_err_t ed64_vseries_firmware_update_check_apply(void) {
 
     if ((cpld_version & 0xF000) == 0x3000 && update_v3_available) {
         debugf("ED64 V3 detected, updating firmware...\n");
-        // char *firmware_path = "ed64-v3-fpga.rbf";
+        char *firmware_path = "ed64-v3-fpga.rbf";
 
-        // if (file_exists(firmware_path)) {
-        //     FILE *fp = fopen(firmware_path, "rb");
-        //     size_t file_size = ftell(fp);
-        //     uint8_t *firmware_data = malloc( file_size );
-        //     fread( firmware_data, 1, file_size, fp );
-        //     fclose( fp );
-        //     if (firmware_data) {
-        //         debugf("Firmware file found, applying update...\n");
-        //         ed64_vseries_ll_update_firmware(firmware_data);
-        //         free(firmware_data);
-        //         // ed_init();
-        //     } else {
-        //         debugf("Failed to load firmware file from %s\n", firmware_path);
-        //     }
-        // }
-        // int32_t fpf = dfs_open(firmware_path);
-        // uint8_t *firmware = malloc(dfs_size(fpf));
-        // dfs_read(firmware, 1, dfs_size(fpf), fpf);
-        // dfs_close(fpf);
-        // //ed64_vseries_ll_update_firmware(firmware);
-        // free(firmware);
-        // //ed_init();
+        if (file_exists(firmware_path)) {
+            FILE *fp = fopen(firmware_path, "rb");
+            size_t file_size = ftell(fp);
+            uint8_t *firmware_data = malloc( file_size );
+            fread( firmware_data, 1, file_size, fp );
+            fclose( fp );
+            if (firmware_data) {
+                debugf("Firmware file found, applying update...\n");
+                ed64_vseries_ll_update_firmware(firmware_data);
+                free(firmware_data);
+            } else {
+                debugf("Failed to load firmware file from %s\n", firmware_path);
+            }
+        }
+        int32_t fpf = dfs_open(firmware_path);
+        uint8_t *firmware = malloc(dfs_size(fpf));
+        dfs_read(firmware, 1, dfs_size(fpf), fpf);
+        dfs_close(fpf);
+        //ed64_vseries_ll_update_firmware(firmware);
+        free(firmware);
+        edv_init();
     }
     else if ((cpld_version & 0xF000) == 0x2000 && update_v2_5_available) {
         debugf("ED64 V2.5 detected, updating firmware...\n");
@@ -198,30 +196,30 @@ static flashcart_err_t ed64_vseries_firmware_update_check_apply(void) {
 }
 
 static flashcart_err_t ed64_vseries_init (void) {
+    edv_init(); // use the local version rather than libcart's version
 
     // Probably need to re-initialize after firmware update
-    ed64_vseries_firmware_update_check_apply();
+    //ed64_vseries_firmware_update_check_apply();
 
-     // Enable RTC if V3
-    if (get_cart_model() == ED64_V3_0) {
-        debugf("ED64 V3 detected, enabling RTC mode...\n");
-        //ed64_vseries_ll_enable_gpio();
-        ed64_vseries_ll_v3_enable_rtc();
-    }
+    //  // Enable RTC if V3
+    // if (get_cart_model() == ED64_V3_0) {
+    //     debugf("ED64 V3 detected, enabling RTC mode...\n");
+    //     //ed64_vseries_ll_enable_gpio();
+    //     ed64_vseries_ll_v3_enable_rtc();
+    // }
 
-    // although limited, we can implement a pseudo writeback system by storing the last used save path and type to SRAM bank as config data
-    // then on init we can load that data back using the true writeback system?
-    ed64_vseries_state_load(&current_state); // On a V3 we could use ed64_vseries_ll_set_save_type(SAVE_TYPE_SRAM_BANKED, true);
+    // // although limited, we can implement a pseudo writeback system by storing the last used save path and type to SRAM bank as config data
+    // // then on init we can load that data back using the true writeback system?
+    // ed64_vseries_state_load(&current_state); // On a V3 we could use ed64_vseries_ll_set_save_type(SAVE_TYPE_SRAM_BANKED, true);
 
-    ed64_vseries_pseudo_save_writeback();
+    //ed64_vseries_pseudo_save_writeback();
 
 
     return FLASHCART_OK;
 }
 
 static flashcart_err_t ed64_vseries_deinit (void) {
-    // // For the moment, just use libCart exit.
-    // ed_exit();
+    edv_exit();
     return FLASHCART_OK;
 }
 
@@ -252,7 +250,7 @@ static flashcart_err_t ed64_vseries_load_rom (char *rom_path, flashcart_progress
         return FLASHCART_ERR_LOAD;
     }
 
-    size_t sdram_size = cart_size; //rom_size; // Adjust sdram_size based on save type and version if needed libdragon libcart provides it?
+    size_t sdram_size = rom_size; //v_cart_size; //rom_size; // Adjust sdram_size based on save type and version if needed libdragon libcart provides it?
 
     size_t chunk_size = KiB(128);
     for (unsigned int offset = 0; offset < sdram_size; offset += chunk_size) {

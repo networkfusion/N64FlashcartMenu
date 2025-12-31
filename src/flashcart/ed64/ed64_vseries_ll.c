@@ -40,7 +40,7 @@ static uint32_t __cart_dom2_rel;
 static uint32_t __cart_dom1;
 static uint32_t __cart_dom2;
 
-uint32_t cart_size;
+uint32_t v_cart_size;
 
 static void __cart_acs_get(void)
 {
@@ -257,109 +257,137 @@ static void __sd_crc16(uint64_t *dst, const uint64_t *src)
     *dst = __sd_crc16_shuffle(x >> 32, x);
 }
 
-int cart_type = CART_NULL;
+int v_cart_type = CART_ED; // Force for ED64 Vseries
 
-int cart_init(void)
-{
-    static int (*const init[CART_MAX])(void) =
-    {
-        ed_init,
-    };
-    int i, result;
-    /* bbplayer */
-    if ((IO_READ(MI_VERSION_REG) & 0xF0) == 0xB0) return -1;
-    if (!__cart_dom1)
-    {
-        __cart_dom1 = 0x8030FFFF;
-        __cart_acs_get();
-        __cart_dom1 = io_read(0x10000000);
-        __cart_acs_rel();
-    }
-    if (!__cart_dom2) __cart_dom2 = __cart_dom1;
-    if (cart_type < 0)
-    {
-        for (i = 0; i < CART_MAX; i++)
-        {
-            if ((result = init[i]()) >= 0)
-            {
-                cart_type = i;
-                return result;
-            }
-        }
-        return -1;
-    }
-    return init[cart_type]();
-}
+// int v_cart_init(void)
+// {
+//     // static int (*const init[CART_MAX])(void) =
+//     // {
+//     //     ci_init,
+//     //     edx_init,
+//     //     edv_init,
+//     //     sc_init,
+//     // };
+//     // int i, result;
+//     // /* bbplayer */
+//     // if ((IO_READ(MI_VERSION_REG) & 0xF0) == 0xB0) return -1;
+//     // if (!__cart_dom1)
+//     // {
+//     //     __cart_dom1 = 0x8030FFFF;
+//     //     __cart_acs_get();
+//     //     __cart_dom1 = io_read(0x10000000);
+//     //     __cart_acs_rel();
+//     // }
+//     // if (!__cart_dom2) __cart_dom2 = __cart_dom1;
+//     // if (v_cart_type < 0)
+//     // {
+//     //     for (i = 0; i < CART_MAX; i++)
+//     //     {
+//     //         if ((result = init[i]()) >= 0)
+//     //         {
+//     //             v_cart_type = i;
+//     //             return result;
+//     //         }
+//     //     }
+//     //     return -1;
+//     // }
+//     // return init[v_cart_type]();
+//     return init[2](); // Force for ED64 Vseries
+// }
 
-int cart_exit(void)
-{
-    static int (*const exit[CART_MAX])(void) =
-    {
-        ed_exit,
-    };
-    if (cart_type < 0) return -1;
-    return exit[cart_type]();
-}
+// int v_cart_exit(void)
+// {
+//     // static int (*const exit[CART_MAX])(void) =
+//     // {
+//     //     ci_exit,
+//     //     edx_exit,
+//     //     edv_exit,
+//     //     sc_exit,
+//     // };
+//     // if (v_cart_type < 0) return -1;
+//     // return exit[v_cart_type]();
+//     return exit[2](); // Force for ED64 Vseries
+// }
 
-int cart_card_init(void)
-{
-    static int (*const card_init[CART_MAX])(void) =
-    {
-        ed_card_init,
-    };
-    if (cart_type < 0) return -1;
-    return card_init[cart_type]();
-}
+// int v_cart_card_init(void)
+// {
+//     // static int (*const card_init[CART_MAX])(void) =
+//     // {
+//     //     ci_card_init,
+//     //     edx_card_init,
+//     //     edv_card_init,
+//     //     sc_card_init,
+//     // };
+//     // if (v_cart_type < 0) return -1;
+//     // return card_init[v_cart_type]();
+//     return card_init[2](); // Force for ED64 Vseries
+// }
 
-int cart_card_rd_dram(void *dram, uint32_t lba, uint32_t count)
-{
-    static int (*const card_rd_dram[CART_MAX])(
-        void *dram, uint32_t lba, uint32_t count
-    ) =
-    {
-        ed_card_rd_dram,
-    };
-    if (cart_type < 0) return -1;
-    return card_rd_dram[cart_type](dram, lba, count);
-}
+// int v_cart_card_rd_dram(void *dram, uint32_t lba, uint32_t count)
+// {
+//     // static int (*const card_rd_dram[CART_MAX])(
+//     //     void *dram, uint32_t lba, uint32_t count
+//     // ) =
+//     // {
+//     //     ci_card_rd_dram,
+//     //     edx_card_rd_dram,
+//     //     edv_card_rd_dram,
+//     //     sc_card_rd_dram,
+//     // };
+//     // if (v_cart_type < 0) return -1;
+//     // return card_rd_dram[v_cart_type](dram, lba, count);
+//     return card_rd_dram[2](dram, lba, count); // Force for ED64 Vseries
+// }
 
-char cart_card_byteswap;
+char v_cart_card_byteswap;
 
-int cart_card_rd_cart(uint32_t cart, uint32_t lba, uint32_t count)
-{
-    static int (*const card_rd_cart[CART_MAX])(
-        uint32_t cart, uint32_t lba, uint32_t count
-    ) =
-    {
-        ed_card_rd_cart,
-    };
-    if (cart_type < 0) return -1;
-    return card_rd_cart[cart_type](cart, lba, count);
-}
+// int v_cart_card_rd_cart(uint32_t cart, uint32_t lba, uint32_t count)
+// {
+//     // static int (*const card_rd_cart[CART_MAX])(
+//     //     uint32_t cart, uint32_t lba, uint32_t count
+//     // ) =
+//     // {
+//     //     ci_card_rd_cart,
+//     //     edx_card_rd_cart,
+//     //     edv_card_rd_cart,
+//     //     sc_card_rd_cart,
+//     // };
+//     // if (v_cart_type < 0) return -1;
+//     // return card_rd_cart[v_cart_type](cart, lba, count);
+//     return card_rd_cart[2](cart, lba, count); // Force for ED64 Vseries
+// }
 
-int cart_card_wr_dram(const void *dram, uint32_t lba, uint32_t count)
-{
-    static int (*const card_wr_dram[CART_MAX])(
-        const void *dram, uint32_t lba, uint32_t count
-    ) =
-    {
-        ed_card_wr_dram,
-    };
-    if (cart_type < 0) return -1;
-    return card_wr_dram[cart_type](dram, lba, count);
-}
+// int v_cart_card_wr_dram(const void *dram, uint32_t lba, uint32_t count)
+// {
+//     // static int (*const t_card_wr_dram[CART_MAX])(
+//     //     const void *dram, uint32_t lba, uint32_t count
+//     // ) =
+//     // {
+//     //     ci_card_wr_dram,
+//     //     edx_card_wr_dram,
+//     //     edv_card_wr_dram,
+//     //     sc_card_wr_dram,
+//     // };
+//     // if (v_cart_type < 0) return -1;
+//     // return t_card_wr_dram[v_cart_type](dram, lba, count);
+//     return t_card_wr_dram[2](dram, lba, count); // Force for ED64 Vseries
+// }
 
-int cart_card_wr_cart(uint32_t cart, uint32_t lba, uint32_t count)
-{
-    static int (*const card_wr_cart[CART_MAX])(
-        uint32_t cart, uint32_t lba, uint32_t count
-    ) =
-    {
-        ed_card_wr_cart,
-    };
-    if (cart_type < 0) return -1;
-    return card_wr_cart[cart_type](cart, lba, count);
-}
+// int v_cart_card_wr_cart(uint32_t cart, uint32_t lba, uint32_t count)
+// {
+//     // static int (*const card_wr_cart[CART_MAX])(
+//     //     uint32_t cart, uint32_t lba, uint32_t count
+//     // ) =
+//     // {
+//     //     ci_card_wr_cart,
+//     //     edx_card_wr_cart,
+//     //     edv_card_wr_cart,
+//     //     sc_card_wr_cart,
+//     // };
+//     // if (v_cart_type < 0) return -1;
+//     // return card_wr_cart[v_cart_type](cart, lba, count);
+//     return card_wr_cart[2](cart, lba, count); // Force for ED64 Vseries
+// }
 
 #define ED_BASE_REG             0x08040000
 
@@ -430,7 +458,7 @@ int cart_card_wr_cart(uint32_t cart, uint32_t lba, uint32_t count)
 #define __ed_sd_dat_rd()        __ed_spi(0xFF)
 #define __ed_sd_dat_wr(val)     __ed_spi((val) & 0xFF)
 
-int ed_init(void)
+int edv_init(void)
 {
     uint32_t ver;
     __cart_acs_get();
@@ -447,23 +475,23 @@ int ed_init(void)
         /* Have 1M SRAM or FlashRAM */
         if (sav & ED_SAV_SRM_SIZE)
         {
-            cart_size = 0x3FE0000; /* 64 MiB - 128 KiB */
+            v_cart_size = 0x3FE0000; /* 64 MiB - 128 KiB */
         }
         /* Have 256K SRAM */
         else if (sav & ED_SAV_SRM_ON)
         {
-            cart_size = 0x3FF8000; /* 64 MiB - 32KiB */
+            v_cart_size = 0x3FF8000; /* 64 MiB - 32KiB */
         }
         else
         {
-            cart_size = 0x4000000; /* 64 MiB */
+            v_cart_size = 0x4000000; /* 64 MiB */
         }
     }
     __cart_acs_rel();
     return 0;
 }
 
-int ed_exit(void)
+int edv_exit(void)
 {
     __cart_acs_get();
     io_write(ED_KEY_REG, 0);
@@ -539,7 +567,7 @@ static int __ed_sd_close(int flag)
     return 0;
 }
 
-int ed_card_init(void)
+int edv_card_init(void)
 {
     int i;
     int n;
@@ -669,7 +697,7 @@ int ed_card_init(void)
     return 0;
 }
 
-int ed_card_rd_dram(void *dram, uint32_t lba, uint32_t count)
+int edv_card_rd_dram(void *dram, uint32_t lba, uint32_t count)
 {
     char *addr = dram;
     int i;
@@ -704,7 +732,7 @@ int ed_card_rd_dram(void *dram, uint32_t lba, uint32_t count)
     return 0;
 }
 
-int ed_card_rd_cart(uint32_t cart, uint32_t lba, uint32_t count)
+int edv_card_rd_cart(uint32_t cart, uint32_t lba, uint32_t count)
 {
     int i;
     int n;
@@ -744,7 +772,7 @@ int ed_card_rd_cart(uint32_t cart, uint32_t lba, uint32_t count)
     }
     else
     {
-        if (cart_card_byteswap)
+        if (v_cart_card_byteswap)
         {
             io_write(ED_CFG_REG, ED_CFG_SDRAM_ON|ED_CFG_BYTESWAP);
         }
@@ -760,7 +788,7 @@ int ed_card_rd_cart(uint32_t cart, uint32_t lba, uint32_t count)
                 CART_ABORT();
             }
         }
-        if (cart_card_byteswap)
+        if (v_cart_card_byteswap)
         {
             io_write(ED_CFG_REG, ED_CFG_SDRAM_ON);
         }
@@ -770,7 +798,7 @@ int ed_card_rd_cart(uint32_t cart, uint32_t lba, uint32_t count)
     return 0;
 }
 
-int ed_card_wr_dram(const void *dram, uint32_t lba, uint32_t count)
+int edv_card_wr_dram(const void *dram, uint32_t lba, uint32_t count)
 {
     const char *addr = dram;
     int i;
@@ -853,7 +881,7 @@ int ed_card_wr_dram(const void *dram, uint32_t lba, uint32_t count)
     return 0;
 }
 
-int ed_card_wr_cart(uint32_t cart, uint32_t lba, uint32_t count)
+int edv_card_wr_cart(uint32_t cart, uint32_t lba, uint32_t count)
 {
     int i;
     int n;
@@ -1142,9 +1170,9 @@ void ed64_vseries_ll_update_firmware(uint8_t *firmware_data) {
 
     wait_ms(20);
 
-    //io_write(ED_CFG_REG, ED_CFG_SDRAM_ON); //re-enable sram
+    io_write(ED_CFG_REG, ED_CFG_SDRAM_ON); //re-enable sram
 
-    ed_init();
+    // edv_init();
 
     debugf("Firmware update completed.\n");
 }

@@ -34,47 +34,48 @@ typedef enum {
 #include <stdint.h>
 
 /* Cartridge types */
-#define CART_NULL       -1
-#define CART_CI         0       /* 64Drive */
-#define CART_EDX        1       /* EverDrive-64 X-series */
+// #define CART_NULL       -1
+// #define CART_CI         0       /* 64Drive */
+// #define CART_EDX        1       /* EverDrive-64 X-series */
 #define CART_ED         2       /* EverDrive-64 V1, V2, V2.5, V3 and ED64+ */
-#define CART_SC         3       /* SummerCart64 */
-#define CART_MAX        4
+// #define CART_SC         3       /* SummerCart64 */
+// //#define CART_EDV3       4       /* EverDrive-64 V1, V2, V2.5, V3 and ED64+ */
+// #define CART_MAX        4 //5
 
 
 /* Size of cartridge SDRAM */
-extern uint32_t cart_size;
+extern uint32_t v_cart_size;
 
 /* Cartridge type */
-extern int cart_type;
+extern int v_cart_type;
 
 /* Detect cartridge and initialize it */
-extern int cart_init(void);
+int v_cart_init(void);
 /* Close the cartridge interface */
-extern int cart_exit(void);
+int v_cart_exit(void);
 
-/* Swap high and low bytes per 16-bit word when reading into SDRAM */
-extern char cart_card_byteswap;
+// /* Swap high and low bytes per 16-bit word when reading into SDRAM */
+extern char v_cart_card_byteswap;
 
-/* Initialize card */
-extern int cart_card_init(void);
-/* Read sectors from card to system RDRAM */
-extern int cart_card_rd_dram(void *dram, uint32_t lba, uint32_t count);
-/* Read sectors from card to cartridge SDRAM */
-extern int cart_card_rd_cart(uint32_t cart, uint32_t lba, uint32_t count);
-/* Write sectors from system RDRAM to card */
-extern int cart_card_wr_dram(const void *dram, uint32_t lba, uint32_t count);
-/* Write sectors from cartridge SDRAM to card */
-extern int cart_card_wr_cart(uint32_t cart, uint32_t lba, uint32_t count);
+// /* Initialize card */
+// int v_cart_card_init(void);
+// /* Read sectors from card to system RDRAM */
+// int v_cart_card_rd_dram(void *dram, uint32_t lba, uint32_t count);
+// /* Read sectors from card to cartridge SDRAM */
+// int v_cart_card_rd_cart(uint32_t cart, uint32_t lba, uint32_t count);
+// /* Write sectors from system RDRAM to card */
+// int v_cart_card_wr_dram(const void *dram, uint32_t lba, uint32_t count);
+// /* Write sectors from cartridge SDRAM to card */
+// int v_cart_card_wr_cart(uint32_t cart, uint32_t lba, uint32_t count);
 
-int ed_init(void);
-int ed_exit(void);
-int ed_card_init(void);
-int ed_card_byteswap(int flag);
-int ed_card_rd_dram(void *dram, uint32_t lba, uint32_t count);
-int ed_card_rd_cart(uint32_t cart, uint32_t lba, uint32_t count);
-int ed_card_wr_dram(const void *dram, uint32_t lba, uint32_t count);
-int ed_card_wr_cart(uint32_t cart, uint32_t lba, uint32_t count);
+int edv_init(void);
+int edv_exit(void);
+int edv_card_init(void);
+int edv_card_byteswap(int flag);
+int edv_card_rd_dram(void *dram, uint32_t lba, uint32_t count);
+int edv_card_rd_cart(uint32_t cart, uint32_t lba, uint32_t count);
+int edv_card_wr_dram(const void *dram, uint32_t lba, uint32_t count);
+int edv_card_wr_cart(uint32_t cart, uint32_t lba, uint32_t count);
 // End copy of libcart functions
 
 /**
