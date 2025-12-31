@@ -7,7 +7,7 @@
 #ifndef FLASHCART_ED64_VSERIES_LL_H__
 #define FLASHCART_ED64_VSERIES_LL_H__
 
-#define ED_V_BASE_REG             0xA8040000 // Base address for ED64 V series registers should be 0x08040000 ideally.
+#define ED_V_BASE_REG             0xA8040000 // Base address for ED64 V series registers should be 0x08040000 (non cached) ideally.
 
 #define ED_V_CFG_REG              (ED_V_BASE_REG+0x00)
 #define ED_V_STATUS_REG           (ED_V_BASE_REG+0x04)

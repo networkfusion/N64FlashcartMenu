@@ -9,6 +9,11 @@
 #include "../flashcart_utils.h"
 #include "ed64_vseries_ll.h"
 
+#define ED_V_DMA_SD_TO_RAM 1
+#define ED_V_DMA_RAM_TO_SD 2
+#define ED_V_DMA_FIFO_TO_RAM 3 //USB
+#define ED_V_DMA_RAM_TO_FIFO 4 //USB
+
 #define ED_V_SAV_EEP_ON           (1 << 0)
 #define ED_V_SAV_SRM_ON           (1 << 1)
 #define ED_V_SAV_EEP_SIZE_LARGE   (1 << 2)
@@ -16,19 +21,78 @@
 #define ED_V_SAV_RAM_BANK_ON      (1 << 7)
 #define ED_V_SAV_RAM_BANK_APPLY   (1 << 15)
 
+#define ED_V_STATE_DMA_BUSY       (1 << 0) // 1
+#define ED_V_STATE_DMA_TOUT       (1 << 1) // 2
+#define ED_V_STATE_USB_TXE        (1 << 2) // 4
+#define ED_V_STATE_USB_RXF        (1 << 3) // 8
+#define ED_V_STATE_SPI            (1 << 4) // 16
 
+#define ED_V_CFG_SDRAM_OFF        (0 << 0) // 0
 #define ED_V_CFG_SDRAM_ON         (1 << 0) // 1
-#define ED_V_CFG_SWAP             (1 << 1) // 2
+#define ED_V_CFG_BYTESWAP         (1 << 1) // 2
 #define ED_V_CFG_WR_MOD           (1 << 2) // 4
 #define ED_V_CFG_WR_ADDR_MASK     (1 << 3) // 8
 // 16 reserved
+#define ED_V_CFG_MODE_RTC_OFF     (0 << 5)
 #define ED_V_CFG_MODE_RTC_ON      (1 << 5) // 32
 // 64 reserved
+#define ED_V_CFG_MODE_GPIO_OFF    (0 << 6)
 #define ED_V_CFG_MODE_GPIO_ON     (1 << 6) // 96 - this is strange... TODO: how to correctly use?
 // 128 reserved
 #define ED_V_CFG_DD_CC_ON         (1 << 8) // 256 // handle cart rom dd-cart conversion rom
 #define ED_V_CFG_DD_CC_WE         (1 << 9) // 512
 
+
+uint8_t ed64_vseries_ll_dma_busy() {
+    // uint32_t resp;
+    // while ((resp = io_read(ED_V_STATUS_REG)) & ED_V_STATE_DMA_BUSY) {
+    //     if (resp & ED_V_STATE_DMA_TOUT)
+    //     {
+    //         return resp & ED_V_STATE_DMA_TOUT;
+    //     }
+    // }
+    // return 0;
+    while ((io_read(ED_V_STATUS_REG) & ED_V_STATE_DMA_BUSY) != 0);
+    return io_read(ED_V_STATUS_REG) & ED_V_STATE_DMA_TOUT;
+
+}
+
+uint8_t ed64_vseries_ll_usb_read_busy() {
+    return io_read(ED_V_STATUS_REG) & ED_V_STATE_USB_RXF;
+}
+
+uint8_t ed64_vseries_ll_usb_write_busy() {
+    return io_read(ED_V_STATUS_REG) & ED_V_STATE_USB_TXE;
+}
+
+
+uint8_t ed64_vseries_ll_usb_read(uint32_t address, uint32_t length) {
+
+    address /= 4;
+    while (ed64_vseries_ll_usb_read_busy() != 0);
+
+    io_write(ED_V_DMA_LEN_REG, length - 1);
+    io_write(ED_V_DMA_ADDR_REG, address);
+    io_write(ED_V_DMA_CFG_REG, ED_V_DMA_FIFO_TO_RAM);
+
+    if (ed64_vseries_ll_dma_busy() != 0)return 1; //EVD_ERROR_FIFO_TIMEOUT;
+
+    return 0;
+}
+
+uint8_t ed64_vseries_ll_usb_write(uint32_t address, uint32_t length) {
+
+    address /= 4;
+    while (ed64_vseries_ll_usb_write_busy() != 0);
+
+    io_write(ED_V_DMA_LEN_REG, length - 1);
+    io_write(ED_V_DMA_ADDR_REG, address);
+    io_write(ED_V_DMA_CFG_REG, ED_V_DMA_RAM_TO_FIFO);
+
+    if (ed64_vseries_ll_dma_busy() != 0)return 1; //EVD_ERROR_FIFO_TIMEOUT;
+
+    return 0;
+}
 
 bool ed64_vseries_ll_get_cpld_version (uint16_t *cpld_version) {
     uint16_t ver;
@@ -122,10 +186,8 @@ void ed64_vseries_ll_update_firmware(uint8_t *firmware_data) {
 
     debugf("Starting firmware update...\n");
 
-    uint16_t cfg = io_read(ED_V_CFG_REG);
-
-    cfg &= ~ED_V_SAV_SRM_ON; // disable sram during firmware update
-    io_write(ED_V_CFG_REG, cfg);
+    //uint16_t cfg = io_read(ED_V_CFG_REG);
+    io_write(ED_V_CFG_REG, ED_V_CFG_SDRAM_OFF); // disable sram during firmware update
 
     io_write(ED_V_CFG_CNT_REG, 0);
     wait_ms(10);
@@ -152,6 +214,8 @@ void ed64_vseries_ll_update_firmware(uint8_t *firmware_data) {
     }
 
     wait_ms(20);
+
+    //io_write(ED_V_CFG_REG, ED_V_CFG_SDRAM_ON); //reenable sram
 
     //ed_init();
 
