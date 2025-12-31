@@ -7,28 +7,8 @@
 #ifndef FLASHCART_ED64_VSERIES_LL_H__
 #define FLASHCART_ED64_VSERIES_LL_H__
 
-#define ED_V_BASE_REG             0xA8040000 // Base address for ED64 V series registers should be 0x08040000 (non cached) ideally.
+// #define ED_V_BASE_REG             0xA8040000 // Base address for ED64 V series registers should be 0x08040000 (non cached) ideally.
 
-#define ED_V_CFG_REG              (ED_V_BASE_REG+0x00)
-#define ED_V_STATUS_REG           (ED_V_BASE_REG+0x04)
-#define ED_V_DMA_LEN_REG          (ED_V_BASE_REG+0x08)
-#define ED_V_DMA_ADDR_REG         (ED_V_BASE_REG+0x0C)
-#define ED_V_MSG_REG              (ED_V_BASE_REG+0x10)
-#define ED_V_DMA_CFG_REG          (ED_V_BASE_REG+0x14)
-#define ED_V_SPI_REG              (ED_V_BASE_REG+0x18)
-#define ED_V_SPI_CFG_REG          (ED_V_BASE_REG+0x1C)
-#define ED_V_KEY_REG              (ED_V_BASE_REG+0x20)
-#define ED_V_SAV_CFG_REG          (ED_V_BASE_REG+0x24)
-#define ED_V_SEC_REG              (ED_V_BASE_REG+0x28)
-#define ED_V_VER_REG              (ED_V_BASE_REG+0x2C)
-#define ED_V_GPIO_REG             (ED_V_BASE_REG+0x30)
-
-#define ED_V_CFG_CNT_REG          (ED_V_BASE_REG+0x40)
-#define ED_V_CFG_DAT_REG          (ED_V_BASE_REG+0x44)
-#define ED_V_MAX_MSG_REG          (ED_V_BASE_REG+0x48)
-#define ED_V_MAX_VER_REG          (ED_V_BASE_REG+0x4C)
-#define ED_V_3_FLA_ADDR_REG       (ED_V_BASE_REG+0x50)
-#define ED_V_3_FLA_DATA_REG       (ED_V_BASE_REG+0x54)
 
 /** @brief CPLD Version Enumeration. */
 typedef enum {
@@ -47,6 +27,55 @@ typedef enum {
     SAVE_TYPE_SRAM_1MBIT, /**< FlashRAM 1Mbit */
     SAVE_TYPE_FLASHRAM_1MBIT, /**< FlashRAM 1Mbit */
 } ed64_vseries_save_type_t;
+
+
+// Copy of libcart functions for low level access
+/* EverDrive-64 functions */
+#include <stdint.h>
+
+/* Cartridge types */
+#define CART_NULL       -1
+#define CART_CI         0       /* 64Drive */
+#define CART_EDX        1       /* EverDrive-64 X-series */
+#define CART_ED         2       /* EverDrive-64 V1, V2, V2.5, V3 and ED64+ */
+#define CART_SC         3       /* SummerCart64 */
+#define CART_MAX        4
+
+
+/* Size of cartridge SDRAM */
+extern uint32_t cart_size;
+
+/* Cartridge type */
+extern int cart_type;
+
+/* Detect cartridge and initialize it */
+extern int cart_init(void);
+/* Close the cartridge interface */
+extern int cart_exit(void);
+
+/* Swap high and low bytes per 16-bit word when reading into SDRAM */
+extern char cart_card_byteswap;
+
+/* Initialize card */
+extern int cart_card_init(void);
+/* Read sectors from card to system RDRAM */
+extern int cart_card_rd_dram(void *dram, uint32_t lba, uint32_t count);
+/* Read sectors from card to cartridge SDRAM */
+extern int cart_card_rd_cart(uint32_t cart, uint32_t lba, uint32_t count);
+/* Write sectors from system RDRAM to card */
+extern int cart_card_wr_dram(const void *dram, uint32_t lba, uint32_t count);
+/* Write sectors from cartridge SDRAM to card */
+extern int cart_card_wr_cart(uint32_t cart, uint32_t lba, uint32_t count);
+
+int ed_init(void);
+int ed_exit(void);
+int ed_card_init(void);
+int ed_card_byteswap(int flag);
+int ed_card_rd_dram(void *dram, uint32_t lba, uint32_t count);
+int ed_card_rd_cart(uint32_t cart, uint32_t lba, uint32_t count);
+int ed_card_wr_dram(const void *dram, uint32_t lba, uint32_t count);
+int ed_card_wr_cart(uint32_t cart, uint32_t lba, uint32_t count);
+// End copy of libcart functions
 
 /**
  * @brief Get the ED64 V series cpld version.
