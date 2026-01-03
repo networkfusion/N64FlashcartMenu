@@ -4,7 +4,7 @@
 
 #include <fatfs/ff.h>
 #include <libdragon.h>
-//#include <libcart/cart.h>
+#include <libcart/cart.h>
 
 #include "utils/fs.h"
 #include "utils/utils.h"
@@ -137,76 +137,82 @@ static flashcart_err_t ed64_vseries_pseudo_save_writeback(void) {
     return FLASHCART_OK;
 }
 
-static flashcart_err_t ed64_vseries_firmware_update_check_apply(void) {
+// static void ed64_vseries_firmware_update_check_apply(void) {
 
-    uint16_t cpld_version;
-    uint16_t fpga_version;
-    ed64_vseries_ll_get_fpga_version(&fpga_version);
-    ed64_vseries_ll_get_cpld_version(&cpld_version);
+//     uint16_t cpld_version;
+//     uint16_t fpga_version;
+//     ed64_vseries_ll_get_fpga_version(&fpga_version);
+//     ed64_vseries_ll_get_cpld_version(&cpld_version);
 
-    // Update firmware if needed (770 - 773 for v3)
-    bool update_v3_available = fpga_version >= 0x300 && fpga_version <= 0x303;
+//     // Update firmware if needed (770 - 773 for v3)
+//     bool update_v3_available = (fpga_version >= 0x300 && fpga_version <= 0x303);
 
-    // 0x232 default v2.50
-    bool update_v2_5_available = fpga_version >= 0x232 && fpga_version <= 0x233;
+//     debugf("ED64 Vseries CPLD Version: 0x%04X\n", cpld_version);
+//     debugf("ED64 Vseries FPGA Version: 0x%04X\n", fpga_version);
+//     debugf("Checking for firmware updates...\n");
+//     debugf(" - V3 Update Available: %s\n", update_v3_available ? "Yes" : "No");
 
-    // 0x214 == firm v2.20
-    bool update_v2_available = fpga_version == 0x214;
+//     wait_ms(5000);
 
-    if ((cpld_version & 0xF000) == 0x3000 && update_v3_available) {
-        debugf("ED64 V3 detected, updating firmware...\n");
-        char *firmware_path = "ed64-v3-fpga.rbf";
+//     // // 0x232 default v2.50
+//     // bool update_v2_5_available = (fpga_version >= 0x232 && fpga_version <= 0x233);
 
-        if (file_exists(firmware_path)) {
-            FILE *fp = fopen(firmware_path, "rb");
-            size_t file_size = ftell(fp);
-            uint8_t *firmware_data = malloc( file_size );
-            fread( firmware_data, 1, file_size, fp );
-            fclose( fp );
-            if (firmware_data) {
-                debugf("Firmware file found, applying update...\n");
-                ed64_vseries_ll_update_firmware(firmware_data);
-                free(firmware_data);
-            } else {
-                debugf("Failed to load firmware file from %s\n", firmware_path);
-            }
-        }
-        int32_t fpf = dfs_open(firmware_path);
-        uint8_t *firmware = malloc(dfs_size(fpf));
-        dfs_read(firmware, 1, dfs_size(fpf), fpf);
-        dfs_close(fpf);
-        //ed64_vseries_ll_update_firmware(firmware);
-        free(firmware);
-        edv_init();
-    }
-    else if ((cpld_version & 0xF000) == 0x2000 && update_v2_5_available) {
-        debugf("ED64 V2.5 detected, updating firmware...\n");
-        // ed64_vseries_ll_update_firmware(firmware_v25);
-        // ed_init();
-    }
-    else if ((cpld_version & 0xF000) == 0x0000 && update_v2_available) {
-        debugf("ED64 V2.0 or below detected, updating firmware...\n");
-        // ed64_vseries_ll_update_firmware(firmware_v20);
-        // ed_init();
-    }
-    else {
-        debugf("Unknown ED64 Vseries detected, or no update required.\n");
-    }
-    return FLASHCART_OK;
-}
+//     // // 0x214 == firm v2.20
+//     // bool update_v2_available = fpga_version == 0x214;
+
+//     // if ((cpld_version & 0xF000) == 0x3000 && update_v3_available) {
+//     //     //debugf("ED64 V3 detected, updating firmware...\n");
+//     //     char *firmware_path = "ed64-v3-fpga.rbf";
+
+//     //     if (file_exists(firmware_path)) {
+//     //         FILE *fp = fopen(firmware_path, "rb");
+//     //         size_t file_size = ftell(fp);
+//     //         uint8_t *firmware_data = malloc( file_size );
+//     //         fread( firmware_data, 1, file_size, fp );
+//     //         fclose( fp );
+//     //         if (firmware_data) {
+//     //             //debugf("Firmware file found, applying update...\n");
+//     //             //ed64_vseries_ll_update_firmware(firmware_data);
+//     //             free(firmware_data);
+//     //         } else {
+//     //             //debugf("Failed to load firmware file from %s\n", firmware_path);
+//     //         }
+//     //     }
+//     //     int32_t fpf = dfs_open(firmware_path);
+//     //     uint8_t *firmware = malloc(dfs_size(fpf));
+//     //     dfs_read(firmware, 1, dfs_size(fpf), fpf);
+//     //     dfs_close(fpf);
+//     //     //ed64_vseries_ll_update_firmware(firmware);
+//     //     free(firmware);
+//     //     edv_init();
+//     // }
+//     // else if ((cpld_version & 0xF000) == 0x2000 && update_v2_5_available) {
+//     //     //debugf("ED64 V2.5 detected, updating firmware...\n");
+//     //     // ed64_vseries_ll_update_firmware(firmware_v25);
+//     //     // ed_init();
+//     // }
+//     // else if ((cpld_version & 0xF000) == 0x0000 && update_v2_available) {
+//     //     //debugf("ED64 V2.0 or below detected, updating firmware...\n");
+//     //     // ed64_vseries_ll_update_firmware(firmware_v20);
+//     //     // ed_init();
+//     // }
+//     // else {
+//     //     //debugf("Unknown ED64 Vseries detected, or no update required.\n");
+//     // }
+// }
 
 static flashcart_err_t ed64_vseries_init (void) {
-    edv_init(); // use the local version rather than libcart's version
+    //ed_init(); // use the local version rather than libcart's version
 
     // Probably need to re-initialize after firmware update
     //ed64_vseries_firmware_update_check_apply();
 
     //  // Enable RTC if V3
-    // if (get_cart_model() == ED64_V3_0) {
-    //     debugf("ED64 V3 detected, enabling RTC mode...\n");
-    //     //ed64_vseries_ll_enable_gpio();
-    //     ed64_vseries_ll_v3_enable_rtc();
-    // }
+    if (get_cart_model() == ED64_V3_0) {
+        debugf("ED64 V3 detected, enabling RTC mode...\n");
+        //ed64_vseries_ll_enable_gpio();
+        ed64_vseries_ll_v3_enable_rtc();
+    }
 
     // // although limited, we can implement a pseudo writeback system by storing the last used save path and type to SRAM bank as config data
     // // then on init we can load that data back using the true writeback system?
@@ -219,12 +225,12 @@ static flashcart_err_t ed64_vseries_init (void) {
 }
 
 static flashcart_err_t ed64_vseries_deinit (void) {
-    edv_exit();
+    ed_exit();
     return FLASHCART_OK;
 }
 
 static bool ed64_vseries_has_feature (flashcart_features_t feature) {
-    bool is_model_v3 = (get_cart_model() == ED64_V3_0); 
+    bool is_model_v3 = (get_cart_model() == ED64_V3_0);
     switch (feature) {
         case FLASHCART_FEATURE_RTC: return is_model_v3 ? true : false;
         case FLASHCART_FEATURE_USB: return is_model_v3 ? true : false;
@@ -250,7 +256,7 @@ static flashcart_err_t ed64_vseries_load_rom (char *rom_path, flashcart_progress
         return FLASHCART_ERR_LOAD;
     }
 
-    size_t sdram_size = rom_size; //v_cart_size; //rom_size; // Adjust sdram_size based on save type and version if needed libdragon libcart provides it?
+    size_t sdram_size = rom_size; //cart_size; //rom_size; // Adjust sdram_size based on save type and version if needed libdragon libcart provides it?
 
     size_t chunk_size = KiB(128);
     for (unsigned int offset = 0; offset < sdram_size; offset += chunk_size) {
@@ -328,42 +334,52 @@ static flashcart_err_t ed64_vseries_load_save (char *save_path) {
         case SAVE_TYPE_FLASHRAM_1MBIT:
         case SAVE_TYPE_SRAM_BANKED:
         case SAVE_TYPE_SRAM_1MBIT:
-            address = (void *) (SRAM_FLASHRAM_ADDRESS);
+            //pi dma to sram
+            // if it is a V3 and using banked sram we should use that?
+            //address = (void *) (SRAM_FLASHRAM_ADDRESS);
             break;
         case SAVE_TYPE_NONE:
         default:
             return FLASHCART_ERR_ARGS;
     }
 
-    FIL fil;
-    UINT br;
+    if (address != NULL) {
 
-    if (f_open(&fil, strip_fs_prefix(save_path), FA_READ) != FR_OK) {
-        return FLASHCART_ERR_LOAD;
+        FIL fil;
+        UINT br;
+
+        if (f_open(&fil, strip_fs_prefix(save_path), FA_READ) != FR_OK) {
+            return FLASHCART_ERR_LOAD;
+        }
+
+        size_t save_size = f_size(&fil);
+
+        if (address == NULL) {
+            f_close(&fil);
+            return FLASHCART_ERR_LOAD;
+        } 
+        // when sram, we need to dma_write(address) here instead of a normal read?
+        if (f_read(&fil, address, save_size, &br) != FR_OK) {
+            f_close(&fil);
+            return FLASHCART_ERR_LOAD;
+        }
+
+        if (f_close(&fil) != FR_OK) {
+            return FLASHCART_ERR_LOAD;
+        }
+
+        if (br != save_size) {
+            return FLASHCART_ERR_LOAD;
+        }
     }
 
-    size_t save_size = f_size(&fil);
-
-    if (f_read(&fil, address, save_size, &br) != FR_OK) {
-        f_close(&fil);
-        return FLASHCART_ERR_LOAD;
-    }
-
-    if (f_close(&fil) != FR_OK) {
-        return FLASHCART_ERR_LOAD;
-    }
-
-    if (br != save_size) {
-        return FLASHCART_ERR_LOAD;
-    }
-
-    // The ED64 Vseries doesn't have real writeback support, but we can at least store the last used save path and type
-    // although limited, we can implement a pseudo writeback system by storing the last used save path and type to SRAM bank as config data
-    // then on init we can load that data back using the true writeback system?
-    current_state.last_save_path = save_path;
-    current_state.last_save_type = type;
-    current_state.is_expecting_save_writeback = true;
-    ed64_vseries_state_save(&current_state);
+        // The ED64 Vseries doesn't have real writeback support, but we can at least store the last used save path and type
+        // although limited, we can implement a pseudo writeback system by storing the last used save path and type to SRAM bank as config data
+        // then on init we can load that data back using the true writeback system?
+        current_state.last_save_path = save_path;
+        current_state.last_save_type = type;
+        current_state.is_expecting_save_writeback = true;
+        ed64_vseries_state_save(&current_state);
 
     return FLASHCART_OK;
 }

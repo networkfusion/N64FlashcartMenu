@@ -7,9 +7,6 @@
 #ifndef FLASHCART_ED64_VSERIES_LL_H__
 #define FLASHCART_ED64_VSERIES_LL_H__
 
-// #define ED_V_BASE_REG             0xA8040000 // Base address for ED64 V series registers should be 0x08040000 (non cached) ideally.
-
-
 /** @brief CPLD Version Enumeration. */
 typedef enum {
     CPLD_VERSION_3_0      = 0x3000, /**< Device variant 3 */
@@ -28,55 +25,6 @@ typedef enum {
     SAVE_TYPE_FLASHRAM_1MBIT, /**< FlashRAM 1Mbit */
 } ed64_vseries_save_type_t;
 
-
-// Copy of libcart functions for low level access
-/* EverDrive-64 functions */
-#include <stdint.h>
-
-/* Cartridge types */
-// #define CART_NULL       -1
-// #define CART_CI         0       /* 64Drive */
-// #define CART_EDX        1       /* EverDrive-64 X-series */
-#define CART_ED         2       /* EverDrive-64 V1, V2, V2.5, V3 and ED64+ */
-// #define CART_SC         3       /* SummerCart64 */
-// //#define CART_EDV3       4       /* EverDrive-64 V1, V2, V2.5, V3 and ED64+ */
-// #define CART_MAX        4 //5
-
-
-/* Size of cartridge SDRAM */
-extern uint32_t v_cart_size;
-
-/* Cartridge type */
-extern int v_cart_type;
-
-/* Detect cartridge and initialize it */
-int v_cart_init(void);
-/* Close the cartridge interface */
-int v_cart_exit(void);
-
-// /* Swap high and low bytes per 16-bit word when reading into SDRAM */
-extern char v_cart_card_byteswap;
-
-// /* Initialize card */
-// int v_cart_card_init(void);
-// /* Read sectors from card to system RDRAM */
-// int v_cart_card_rd_dram(void *dram, uint32_t lba, uint32_t count);
-// /* Read sectors from card to cartridge SDRAM */
-// int v_cart_card_rd_cart(uint32_t cart, uint32_t lba, uint32_t count);
-// /* Write sectors from system RDRAM to card */
-// int v_cart_card_wr_dram(const void *dram, uint32_t lba, uint32_t count);
-// /* Write sectors from cartridge SDRAM to card */
-// int v_cart_card_wr_cart(uint32_t cart, uint32_t lba, uint32_t count);
-
-int edv_init(void);
-int edv_exit(void);
-int edv_card_init(void);
-int edv_card_byteswap(int flag);
-int edv_card_rd_dram(void *dram, uint32_t lba, uint32_t count);
-int edv_card_rd_cart(uint32_t cart, uint32_t lba, uint32_t count);
-int edv_card_wr_dram(const void *dram, uint32_t lba, uint32_t count);
-int edv_card_wr_cart(uint32_t cart, uint32_t lba, uint32_t count);
-// End copy of libcart functions
 
 /**
  * @brief Get the ED64 V series cpld version.
