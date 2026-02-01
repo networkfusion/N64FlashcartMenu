@@ -270,31 +270,76 @@ void rom_metadata_load(path_t *path, rom_info_t *rom_info) {
 
     // 3. If we still don't have a meta path, try metadata.ini as fallback
     if (!meta_path) {
-        path_ext_replace(rom_info_meta_path, "metadata.ini");
+        // Create a fresh path clone to avoid conflicts with previous modifications
+        path_t *ini_path = path_clone(path);
+        path_ext_replace(ini_path, "metadata.ini");
 
-        if (file_exists(path_get(rom_info_meta_path))) {
-            meta_path = path_get(rom_info_meta_path);
+        if (file_exists(path_get(ini_path))) {
+            meta_path = path_get(ini_path);
+            path_free(rom_info_meta_path);
+            rom_info_meta_path = ini_path;
         } else {
+            path_free(ini_path);
             // 4. Try to find the file in database using ROM game code
-            // Database structure: metadata/GAMECODE/metadata.ini
-            path_t *db_path = path_clone(path);
-            path_pop(db_path);  // Remove filename, keep directory
-            path_push(db_path, "metadata");
-
+            // Database structure: metadata/N/B/7/T/metadata.ini or menu/metadata/N/B/7/T/metadata.ini
+            // Navigate back to storage root and look for metadata directory
+            
             // Create a string for the game code (null-terminated)
             char game_code_str[5] = {0};
             strncpy(game_code_str, rom_info->game_code, 4);
 
-            path_push(db_path, game_code_str);
-            path_push(db_path, "metadata.ini");
+            bool found = false;
+            path_t *db_path = NULL;
 
-            if (file_exists(path_get(db_path))) {
-                meta_path = path_get(db_path);
-                path_free(rom_info_meta_path);
-                rom_info_meta_path = db_path;
-            } else {
-                // Database file does not exist either, return with defaults
-                path_free(db_path);
+            // Try multiple paths - navigate back up to 10 levels to find storage root
+            // ROMs can be at various depths: roms/game.z64, N64/game.z64, NTSC/USA/A_ROMs/game.z64, etc.
+            for (int levels = 1; levels <= 10 && !found; levels++) {
+                db_path = path_clone(path);
+                
+                // Pop the filename and go back 'levels' directories
+                path_pop(db_path);  // Remove filename
+                for (int i = 1; i < levels; i++) {
+                    path_pop(db_path);
+                }
+                
+                // Try two patterns: menu/metadata and just metadata
+                for (int p = 0; p < 2 && !found; p++) {
+                    path_t *test_path = path_clone(db_path);
+                    
+                    if (p == 0) {
+                        path_push(test_path, "menu");
+                        path_push(test_path, "metadata");
+                    } else {
+                        path_push(test_path, "metadata");
+                    }
+                    
+                    // Push each character of the game code as a separate directory
+                    char char_path[2] = {0, 0};
+                    for (int i = 0; i < 4; i++) {
+                        char_path[0] = game_code_str[i];
+                        path_push(test_path, char_path);
+                    }
+                    
+                    path_push(test_path, "metadata.ini");
+
+                    if (file_exists(path_get(test_path))) {
+                        db_path = test_path;
+                        meta_path = path_get(db_path);
+                        path_free(rom_info_meta_path);
+                        rom_info_meta_path = db_path;
+                        found = true;
+                    } else {
+                        path_free(test_path);
+                    }
+                }
+                
+                if (!found) {
+                    path_free(db_path);
+                }
+            }
+
+            if (!found) {
+                // Database file does not exist at any level, return with defaults
                 path_free(rom_info_meta_path);
                 return;
             }
