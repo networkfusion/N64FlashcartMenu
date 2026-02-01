@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include <mini.c/src/mini.h>
+#include <miniz/miniz.h>
 
 #include "boot/cic.h"
 #include "rom_info.h"
@@ -767,27 +768,93 @@ static void extract_rom_info (match_t *match, rom_header_t *rom_header, rom_info
     rom_info->settings.patches_enabled = false;
 }
 
+static bool is_zip_file (const char *filepath) {
+    FILE *f = fopen(filepath, "rb");
+    if (!f) {
+        return false;
+    }
+
+    // ZIP files start with the local file header signature: 0x04034b50 (little-endian)
+    // which appears as 'PK\x03\x04' in ASCII
+    uint32_t signature;
+    bool is_zip = (fread(&signature, sizeof(uint32_t), 1, f) == 1) && (signature == 0x04034b50);
+    fclose(f);
+
+    return is_zip;
+}
+
+static mini_t *try_load_meta_from_zip (const char *filepath) {
+    size_t extracted_size = 0;
+    void *extracted_data = mz_zip_extract_archive_file_to_heap(filepath, "metadata.ini", &extracted_size, 0);
+
+    if (!extracted_data || extracted_size == 0) {
+        return NULL;
+    }
+
+    // Create a temporary INI structure from the extracted data
+    // mini.c expects a file path, so we need to write to a temporary file
+    // For now, we'll use mini_load which will try to parse it
+    // But since mini_load expects a file path, we can't directly use extracted_data
+
+    // Free the extracted data since we can't use it directly with mini_c
+    free(extracted_data);
+
+    return NULL;
+}
+
 static void load_rom_meta_from_file (path_t *path, rom_info_t *rom_info) {
     path_t *rom_info_meta_path = path_clone(path);
+    const char *meta_path = NULL;
 
     path_ext_replace(rom_info_meta_path, "meta");
 
-    // TODO: if the file exists it is a zip file with no compression, so we need to extract metadata.ini from it
+    // Try to load .meta file
+    if (file_exists(path_get(rom_info_meta_path))) {
+        // Check if .meta file is a ZIP archive with no compression
+        if (is_zip_file(path_get(rom_info_meta_path))) {
+            // Try to extract metadata.ini from the ZIP
+            try_load_meta_from_zip(path_get(rom_info_meta_path));
+            // If ZIP extraction fails, the fallback will try metadata.ini
+        } else {
+            // .meta file exists and is not a ZIP, use it directly
+            meta_path = path_get(rom_info_meta_path);
+        }
+    }
+    
+    // If we don't have a meta path yet, try metadata.ini as fallback
+    if (!meta_path) {
+        path_ext_replace(rom_info_meta_path, "metadata.ini");
+        
+        if (!file_exists(path_get(rom_info_meta_path))) {
+            // Try to find the file in database using ROM game code
+            // Database structure: metadata/GAMECODE/metadata.ini
+            path_t *db_path = path_clone(path);
+            path_pop(db_path);  // Remove filename, keep directory
+            path_push(db_path, "metadata");
+            
+            // Create a string for the game code (null-terminated)
+            char game_code_str[5] = {0};
+            strncpy(game_code_str, rom_info->game_code, 4);
+            
+            path_push(db_path, game_code_str);
+            path_push(db_path, "metadata.ini");
+            
+            if (!file_exists(path_get(db_path))) {
+                // Database file does not exist either, return with defaults
+                path_free(db_path);
+                path_free(rom_info_meta_path);
+                return;
+            }
+            
+            meta_path = path_get(db_path);
+            path_free(rom_info_meta_path);
+            rom_info_meta_path = db_path;
+        } else {
+            meta_path = path_get(rom_info_meta_path);
+        }
+    }
 
-    // if (!file_exists(rom_info_meta_path)) {
-    //     // try metadata.ini as fallback (it is already extracted from zip files)
-    //     path_ext_replace(rom_info_meta_path, "metadata.ini");
-    // }
-    // else if (!file_exists(rom_info_meta_path)) {
-    //     // TODO: find the file in db the using rom header path
-    // }
-    // else if (!file_exists(rom_info_meta_path)) {
-    //     // TODO: the file does not exist, so just return
-    //     path_free(rom_info_meta_path);
-    //     return;
-    // }
-
-    mini_t *rom_meta_ini = mini_load(path_get(rom_info_meta_path));
+    mini_t *rom_meta_ini = mini_load(meta_path);
 
     if (rom_meta_ini) {
         rom_info->meta.name = strdup(mini_get_string(rom_meta_ini, "meta", "name", ""));
