@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include <mini.c/src/mini.h>
 #include <miniz/miniz.h>
@@ -41,12 +42,14 @@ static bool is_zip_file(const char *filepath) {
 /**
  * @brief Attempt to extract metadata.ini from a ZIP file
  *
- * Tries to extract metadata.ini from an external ZIP file (.meta file).
- * Currently returns NULL as mini.c requires file paths for loading INI files.
- * Future enhancement: write extracted data to temporary file for mini_load.
+ * Extracts metadata.ini from a ZIP archive by:
+ * 1. Extracting to memory using miniz
+ * 2. Writing to a temporary file
+ * 3. Loading INI data with mini_load
+ * 4. Cleaning up the temporary file
  *
  * @param filepath Path to the ZIP file
- * @return NULL (placeholder for future implementation)
+ * @return Loaded INI structure on success, NULL on failure
  */
 static mini_t *try_load_meta_from_zip(const char *filepath) {
     size_t extracted_size = 0;
@@ -56,12 +59,34 @@ static mini_t *try_load_meta_from_zip(const char *filepath) {
         return NULL;
     }
 
-    // TODO: Create a temporary INI structure from the extracted data
-    // mini.c expects a file path, so we would need to write to a temporary file
-    // or implement a way to parse INI directly from memory
+    // Create a temporary file to hold the extracted INI data
+    // Use /tmp or system temp directory
+    char temp_path[] = "/tmp/rom_metadata_XXXXXX";
+    int temp_fd = mkstemp(temp_path);
+
+    if (temp_fd < 0) {
+        free(extracted_data);
+        return NULL;
+    }
+
+    // Write extracted data to temporary file
+    ssize_t written = write(temp_fd, extracted_data, extracted_size);
+    close(temp_fd);
+
+    if (written != (ssize_t)extracted_size) {
+        free(extracted_data);
+        unlink(temp_path);
+        return NULL;
+    }
+
+    // Load INI from temporary file
+    mini_t *rom_meta_ini = mini_load(temp_path);
+
+    // Clean up temporary file and extracted data
+    unlink(temp_path);
     free(extracted_data);
 
-    return NULL;
+    return rom_meta_ini;
 }
 
 /**
@@ -96,13 +121,18 @@ static bool has_embedded_metadata(const char *rom_path) {
  * @brief Attempt to extract metadata from ROM-embedded ZIP
  *
  * Checks if the ROM has the embedded metadata indicator set (byte 0x38 bit 0),
- * then attempts to extract metadata.ini from the ZIP appended to the ROM.
+ * then extracts metadata.ini from the ZIP appended to the ROM by:
+ * 1. Checking for embedded metadata indicator
+ * 2. Extracting to memory using miniz
+ * 3. Writing to a temporary file
+ * 4. Loading INI data with mini_load
+ * 5. Cleaning up the temporary file
  *
- * Since ZIP files are parsed from the end, the miniz library can read the
- * appended ZIP directly from the ROM file without needing to extract it first.
+ * Since ZIP files are parsed from the end, miniz can read the appended ZIP
+ * directly from the ROM file without needing to extract it first.
  *
  * @param rom_path Path to the ROM file
- * @return NULL (placeholder for future implementation)
+ * @return Loaded INI structure on success, NULL on failure
  *
  * @see https://n64brew.dev/wiki/ROM_Metadata#Embedded_metadata
  */
@@ -121,10 +151,33 @@ static mini_t *try_load_meta_from_rom_embedded(const char *rom_path) {
         return NULL;
     }
 
-    // TODO: Parse the extracted data as INI
+    // Create a temporary file to hold the extracted INI data
+    char temp_path[] = "/tmp/rom_metadata_XXXXXX";
+    int temp_fd = mkstemp(temp_path);
+
+    if (temp_fd < 0) {
+        free(extracted_data);
+        return NULL;
+    }
+
+    // Write extracted data to temporary file
+    ssize_t written = write(temp_fd, extracted_data, extracted_size);
+    close(temp_fd);
+
+    if (written != (ssize_t)extracted_size) {
+        free(extracted_data);
+        unlink(temp_path);
+        return NULL;
+    }
+
+    // Load INI from temporary file
+    mini_t *rom_meta_ini = mini_load(temp_path);
+
+    // Clean up temporary file and extracted data
+    unlink(temp_path);
     free(extracted_data);
 
-    return NULL;
+    return rom_meta_ini;
 }
 
 /**
@@ -175,7 +228,20 @@ void rom_metadata_load(path_t *path, rom_info_t *rom_info) {
         // Check if .meta file is a ZIP archive
         if (is_zip_file(path_get(rom_info_meta_path))) {
             // Try to extract metadata.ini from the ZIP
-            try_load_meta_from_zip(path_get(rom_info_meta_path));
+            mini_t *zip_meta = try_load_meta_from_zip(path_get(rom_info_meta_path));
+            if (zip_meta) {
+                // Successfully loaded metadata from ZIP, use it directly
+                rom_info->meta.name = strdup(mini_get_string(zip_meta, "meta", "name", ""));
+                rom_info->meta.author = strdup(mini_get_string(zip_meta, "meta", "author", ""));
+                rom_info->meta.release_date = strdup(mini_get_string(zip_meta, "meta", "release-date", ""));
+                rom_info->meta.osi_license = strdup(mini_get_string(zip_meta, "meta", "osi-license", ""));
+                rom_info->meta.website = strdup(mini_get_string(zip_meta, "meta", "website", ""));
+                rom_info->meta.age_rating = mini_get_int(zip_meta, "meta", "age-rating", 0);
+                rom_info->meta.short_description = strdup(mini_get_string(zip_meta, "meta", "short-desc", ""));
+                mini_free(zip_meta);
+                path_free(rom_info_meta_path);
+                return;
+            }
             // If ZIP extraction fails, the fallback will try other sources
         } else {
             // .meta file exists and is not a ZIP, use it directly
@@ -185,7 +251,20 @@ void rom_metadata_load(path_t *path, rom_info_t *rom_info) {
 
     // 2. If no external metadata, check for embedded metadata in ROM
     if (!meta_path) {
-        try_load_meta_from_rom_embedded(path_get(path));
+        mini_t *embedded_meta = try_load_meta_from_rom_embedded(path_get(path));
+        if (embedded_meta) {
+            // Successfully loaded embedded metadata, use it directly
+            rom_info->meta.name = strdup(mini_get_string(embedded_meta, "meta", "name", ""));
+            rom_info->meta.author = strdup(mini_get_string(embedded_meta, "meta", "author", ""));
+            rom_info->meta.release_date = strdup(mini_get_string(embedded_meta, "meta", "release-date", ""));
+            rom_info->meta.osi_license = strdup(mini_get_string(embedded_meta, "meta", "osi-license", ""));
+            rom_info->meta.website = strdup(mini_get_string(embedded_meta, "meta", "website", ""));
+            rom_info->meta.age_rating = mini_get_int(embedded_meta, "meta", "age-rating", 0);
+            rom_info->meta.short_description = strdup(mini_get_string(embedded_meta, "meta", "short-desc", ""));
+            mini_free(embedded_meta);
+            path_free(rom_info_meta_path);
+            return;
+        }
         // If embedded extraction fails, the fallback will try external sources
     }
 
