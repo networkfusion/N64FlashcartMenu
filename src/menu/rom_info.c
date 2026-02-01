@@ -772,6 +772,21 @@ static void load_rom_meta_from_file (path_t *path, rom_info_t *rom_info) {
 
     path_ext_replace(rom_info_meta_path, "meta");
 
+    // TODO: if the file exists it is a zip file with no compression, so we need to extract metadata.ini from it
+
+    // if (!file_exists(rom_info_meta_path)) {
+    //     // try metadata.ini as fallback (it is already extracted from zip files)
+    //     path_ext_replace(rom_info_meta_path, "metadata.ini");
+    // }
+    // else if (!file_exists(rom_info_meta_path)) {
+    //     // TODO: find the file in db the using rom header path
+    // }
+    // else if (!file_exists(rom_info_meta_path)) {
+    //     // TODO: the file does not exist, so just return
+    //     path_free(rom_info_meta_path);
+    //     return;
+    // }
+
     mini_t *rom_meta_ini = mini_load(path_get(rom_info_meta_path));
 
     if (rom_meta_ini) {
