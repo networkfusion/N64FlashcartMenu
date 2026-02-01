@@ -802,31 +802,79 @@ static mini_t *try_load_meta_from_zip (const char *filepath) {
     return NULL;
 }
 
+static bool has_embedded_metadata (const char *rom_path) {
+    // Check byte 0x38 bit 0 to see if embedded metadata is present
+    FILE *f = fopen(rom_path, "rb");
+    if (!f) {
+        return false;
+    }
+
+    // Seek to byte 0x38
+    if (fseek(f, 0x38, SEEK_SET) != 0) {
+        fclose(f);
+        return false;
+    }
+
+    uint8_t byte;
+    bool has_embedded = (fread(&byte, 1, 1, f) == 1) && (byte & 0x01);
+    fclose(f);
+
+    return has_embedded;
+}
+
+static mini_t *try_load_meta_from_rom_embedded (const char *rom_path) {
+    // Check if embedded metadata is present
+    if (!has_embedded_metadata(rom_path)) {
+        return NULL;
+    }
+
+    // Try to extract metadata.ini from the ROM (which contains an appended ZIP)
+    // ZIP libraries can parse from the end of the file, so we pass the ROM itself
+    size_t extracted_size = 0;
+    void *extracted_data = mz_zip_extract_archive_file_to_heap(rom_path, "metadata.ini", &extracted_size, 0);
+
+    if (!extracted_data || extracted_size == 0) {
+        return NULL;
+    }
+
+    // Free the extracted data since we can't use it directly with mini_c yet
+    free(extracted_data);
+
+    return NULL;
+}
+
 static void load_rom_meta_from_file (path_t *path, rom_info_t *rom_info) {
     path_t *rom_info_meta_path = path_clone(path);
     const char *meta_path = NULL;
 
+    // 1. First, check external .meta file (highest priority per spec)
     path_ext_replace(rom_info_meta_path, "meta");
-
-    // Try to load .meta file
     if (file_exists(path_get(rom_info_meta_path))) {
-        // Check if .meta file is a ZIP archive with no compression
+        // Check if .meta file is a ZIP archive
         if (is_zip_file(path_get(rom_info_meta_path))) {
             // Try to extract metadata.ini from the ZIP
             try_load_meta_from_zip(path_get(rom_info_meta_path));
-            // If ZIP extraction fails, the fallback will try metadata.ini
+            // If ZIP extraction fails, the fallback will try other sources
         } else {
             // .meta file exists and is not a ZIP, use it directly
             meta_path = path_get(rom_info_meta_path);
         }
     }
     
-    // If we don't have a meta path yet, try metadata.ini as fallback
+    // 2. If no external metadata, check for embedded metadata in ROM
+    if (!meta_path) {
+        try_load_meta_from_rom_embedded(path_get(path));
+        // If embedded extraction fails, the fallback will try external sources
+    }
+    
+    // 3. If we still don't have a meta path, try metadata.ini as fallback
     if (!meta_path) {
         path_ext_replace(rom_info_meta_path, "metadata.ini");
         
-        if (!file_exists(path_get(rom_info_meta_path))) {
-            // Try to find the file in database using ROM game code
+        if (file_exists(path_get(rom_info_meta_path))) {
+            meta_path = path_get(rom_info_meta_path);
+        } else {
+            // 4. Try to find the file in database using ROM game code
             // Database structure: metadata/GAMECODE/metadata.ini
             path_t *db_path = path_clone(path);
             path_pop(db_path);  // Remove filename, keep directory
@@ -839,18 +887,16 @@ static void load_rom_meta_from_file (path_t *path, rom_info_t *rom_info) {
             path_push(db_path, game_code_str);
             path_push(db_path, "metadata.ini");
             
-            if (!file_exists(path_get(db_path))) {
+            if (file_exists(path_get(db_path))) {
+                meta_path = path_get(db_path);
+                path_free(rom_info_meta_path);
+                rom_info_meta_path = db_path;
+            } else {
                 // Database file does not exist either, return with defaults
                 path_free(db_path);
                 path_free(rom_info_meta_path);
                 return;
             }
-            
-            meta_path = path_get(db_path);
-            path_free(rom_info_meta_path);
-            rom_info_meta_path = db_path;
-        } else {
-            meta_path = path_get(rom_info_meta_path);
         }
     }
 
