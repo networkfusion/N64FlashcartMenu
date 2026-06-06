@@ -345,7 +345,69 @@ static void iterate_metadata_image(menu_t *menu, int direction) {
     }
 }
 
-static component_context_menu_t set_cic_type_context_menu = { .list = {
+static int get_cic_type_current_selection (menu_t *menu) {
+    rom_cic_type_t current_cic = rom_info_get_cic_type(&menu->load.rom_info);
+    
+    // Map CIC type to menu index (matches order in set_cic_type_context_menu)
+    switch (current_cic) {
+        case ROM_CIC_TYPE_AUTOMATIC:        return 0;
+        case ROM_CIC_TYPE_6101:             return 1;
+        case ROM_CIC_TYPE_7102:             return 2;
+        case ROM_CIC_TYPE_x102:             return 3;
+        case ROM_CIC_TYPE_x103:             return 4;
+        case ROM_CIC_TYPE_x105:             return 5;
+        case ROM_CIC_TYPE_x106:             return 6;
+        case ROM_CIC_TYPE_5101:             return 7;
+        case ROM_CIC_TYPE_5167:             return 8;
+        case ROM_CIC_TYPE_8301:             return 9;
+        case ROM_CIC_TYPE_8302:             return 10;
+        case ROM_CIC_TYPE_8303:             return 11;
+        case ROM_CIC_TYPE_8401:             return 12;
+        case ROM_CIC_TYPE_8501:             return 13;
+        case ROM_CIC_TYPE_UNKNOWN:
+        default:                            return 0;  // Default to Automatic
+    }
+}
+
+static int get_save_type_current_selection (menu_t *menu) {
+    rom_save_type_t current_save = rom_info_get_save_type(&menu->load.rom_info);
+    
+    // Map save type to menu index (matches order in set_save_type_context_menu)
+    switch (current_save) {
+        case SAVE_TYPE_AUTOMATIC:           return 0;
+        case SAVE_TYPE_NONE:                return 1;
+        case SAVE_TYPE_EEPROM_4KBIT:        return 2;
+        case SAVE_TYPE_EEPROM_16KBIT:       return 3;
+        case SAVE_TYPE_SRAM_256KBIT:        return 4;
+        case SAVE_TYPE_SRAM_BANKED:         return 5;
+        case SAVE_TYPE_SRAM_1MBIT:          return 6;
+        case SAVE_TYPE_FLASHRAM_1MBIT:      return 7;
+        case SAVE_TYPE_FLASHRAM_PKST2:
+        default:                            return 0;  // Default to Automatic
+    }
+}
+
+static int get_tv_type_current_selection (menu_t *menu) {
+    rom_tv_type_t current_tv = rom_info_get_tv_type(&menu->load.rom_info);
+    
+    // Map TV type to menu index (matches order in set_tv_type_context_menu)
+    switch (current_tv) {
+        case ROM_TV_TYPE_AUTOMATIC:         return 0;
+        case ROM_TV_TYPE_PAL:               return 1;
+        case ROM_TV_TYPE_NTSC:              return 2;
+        case ROM_TV_TYPE_MPAL:              return 3;
+        default:                            return 0;  // Default to Automatic
+    }
+}
+
+static int get_cheat_option_current_selection (menu_t *menu) {
+    // Check if cheats are enabled in the current ROM info
+    return menu->load.rom_info.settings.cheats_enabled ? 0 : 1;
+}
+
+static component_context_menu_t set_cic_type_context_menu = {
+    .get_default_selection = get_cic_type_current_selection,
+    .list = {
     {.text = "Automatic", .action = set_cic_type, .arg = (void *) (ROM_CIC_TYPE_AUTOMATIC) },
     {.text = "CIC-6101", .action = set_cic_type, .arg = (void *) (ROM_CIC_TYPE_6101) },
     {.text = "CIC-7102", .action = set_cic_type, .arg = (void *) (ROM_CIC_TYPE_7102) },
@@ -363,7 +425,9 @@ static component_context_menu_t set_cic_type_context_menu = { .list = {
     COMPONENT_CONTEXT_MENU_LIST_END,
 }};
 
-static component_context_menu_t set_save_type_context_menu = { .list = {
+static component_context_menu_t set_save_type_context_menu = {
+    .get_default_selection = get_save_type_current_selection,
+    .list = {
     { .text = "Automatic", .action = set_save_type, .arg = (void *) (SAVE_TYPE_AUTOMATIC) },
     { .text = "None", .action = set_save_type, .arg = (void *) (SAVE_TYPE_NONE) },
     { .text = "EEPROM 4kbit", .action = set_save_type, .arg = (void *) (SAVE_TYPE_EEPROM_4KBIT) },
@@ -375,7 +439,9 @@ static component_context_menu_t set_save_type_context_menu = { .list = {
     COMPONENT_CONTEXT_MENU_LIST_END,
 }};
 
-static component_context_menu_t set_tv_type_context_menu = { .list = {
+static component_context_menu_t set_tv_type_context_menu = {
+    .get_default_selection = get_tv_type_current_selection,
+    .list = {
     { .text = "Automatic", .action = set_tv_type, .arg = (void *) (ROM_TV_TYPE_AUTOMATIC) },
     { .text = "PAL", .action = set_tv_type, .arg = (void *) (ROM_TV_TYPE_PAL) },
     { .text = "NTSC", .action = set_tv_type, .arg = (void *) (ROM_TV_TYPE_NTSC) },
@@ -383,7 +449,9 @@ static component_context_menu_t set_tv_type_context_menu = { .list = {
     COMPONENT_CONTEXT_MENU_LIST_END,
 }};
 
-static component_context_menu_t set_cheat_options_menu = { .list = {
+static component_context_menu_t set_cheat_options_menu = {
+    .get_default_selection = get_cheat_option_current_selection,
+    .list = {
     { .text = "Enable", .action = set_cheat_option, .arg = (void *) (true)},
     { .text = "Disable", .action = set_cheat_option, .arg = (void *) (false)},
     COMPONENT_CONTEXT_MENU_LIST_END,
