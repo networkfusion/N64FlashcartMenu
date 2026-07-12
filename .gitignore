@@ -24,5 +24,10 @@
 # Ignore exe files
 *.exe
 
+# Ignore host-side test binaries
+/tests/test_fs
+/tests/test_path
+/tests/test_ini_parser
+
 # Ignore macOS filesystem cruft
 .DS_Store
