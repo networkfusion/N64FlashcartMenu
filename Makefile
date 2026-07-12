@@ -217,6 +217,51 @@ else
 endif
 .PHONY: run-debug-upload
 
+ARES_LOCAL := $(wildcard tools/ares/*/ares tools/ares/*/ares.exe)
+ARES ?= $(if $(ARES_LOCAL),$(firstword $(ARES_LOCAL)),ares)
+GDB_PORT ?= 9123
+GDB ?= mips64-elf-gdb
+ARES_COMMON_FLAGS := --no-file-prompt --setting General/HomebrewMode=true
+
+run-ares: $(OUTPUT_DIR)/$(PROJECT_NAME).n64
+	@command -v $(ARES) >/dev/null 2>&1 || test -f $(ARES) || \
+		{ echo "ERROR: Ares not found (tried '$(ARES)')."; \
+		  echo "  Download Ares from https://ares-emu.net/ into tools/ares/,"; \
+		  echo "  or override with: make run-ares ARES=/path/to/ares"; \
+		  exit 1; }
+	@echo "Launching ROM in Ares emulator: $<"
+	$(ARES) $(ARES_COMMON_FLAGS) "$<"
+.PHONY: run-ares
+
+# Launch Ares with the GDB server enabled on GDB_PORT (default 9123).
+# Ares halts the CPU at reset and waits for a GDB client before running.
+# Connect with: make gdb   (from devcontainer)
+run-ares-debug: $(OUTPUT_DIR)/$(PROJECT_NAME).n64
+	@command -v $(ARES) >/dev/null 2>&1 || test -f $(ARES) || \
+		{ echo "ERROR: Ares not found (tried '$(ARES)')."; \
+		  echo "  Download Ares from https://ares-emu.net/ into tools/ares/,"; \
+		  echo "  or override with: make run-ares-debug ARES=/path/to/ares"; \
+		  exit 1; }
+	@echo "Launching ROM in Ares with GDB server on port $(GDB_PORT)..."
+	@echo "Connect with: make gdb   (or: $(GDB) -ex 'target remote :$(GDB_PORT)' $(BUILD_DIR)/$(PROJECT_NAME).elf)"
+	$(ARES) \
+		$(ARES_COMMON_FLAGS) \
+		--setting DebugServer/Enabled=true \
+		--setting DebugServer/Port=$(GDB_PORT) \
+		--setting Boot/AwaitGDBClient=true \
+		"$<"
+.PHONY: run-ares-debug
+
+# Connect mips64-elf-gdb (available in devcontainer) to a running Ares GDB server.
+# Requires Ares to already be running via: make run-ares-debug
+gdb: $(BUILD_DIR)/$(PROJECT_NAME).elf
+	@echo "Connecting GDB to Ares on localhost:$(GDB_PORT)..."
+	$(GDB) \
+		-ex "set architecture mips:4300" \
+		-ex "target remote localhost:$(GDB_PORT)" \
+		"$<"
+.PHONY: gdb
+
 # test:
 #   TODO: run tests
 

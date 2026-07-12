@@ -14,6 +14,9 @@ This menu is not affiliated with any particular flashcart and does not necessari
 > [!TIP]
 > New users are invited to read the latest [Documentation / User Guide](./docs/00_index.md).
 
+> [!TIP]
+> Developers can find test and emulator-debug setup steps in the [Menu Developer Guide](./docs/99_developer_guide.md).
+
 ## Flashcart Support
 This menu aims to support as many N64 flashcarts as possible.  
 The current state of support is:

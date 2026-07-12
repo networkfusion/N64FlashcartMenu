@@ -101,6 +101,48 @@ For ease of development and debugging, the N64FlashcartMenu ROM can run in the [
 * Ensure you have the Ares emulator on your computer.
 * Load the `N64FlashcartMenu.n64` ROM.
 
+##### Automated test and debug workflow (recommended)
+Use this workflow to verify local changes before opening a PR.
+
+1. Run unit tests in the dev container:
+```bash
+cd tests && make -B test
+```
+
+2. Build ROM artifacts in the dev container:
+```bash
+make all -j2
+```
+
+3. Run Ares debug smoke test from Windows host:
+```powershell
+powershell -ExecutionPolicy Bypass -File tests\gdb_smoke.ps1
+```
+
+This smoke test will:
+* Start Ares in homebrew mode with file prompts disabled.
+* Enable and verify the Ares debug server on `127.0.0.1:9123`.
+* Attempt a real GDB attach if a host GDB binary is available.
+* Shut down emulator processes started by the smoke run.
+
+##### One-time Windows security setup for local emulator binaries
+If Ares was downloaded manually and Windows marks it as downloaded from the internet,
+run this once to avoid SmartScreen/MOTW execution interruptions:
+
+```powershell
+Unblock-File -Path .\tools\ares\ares-v148\ares.exe
+```
+
+The smoke script also attempts to unblock the file automatically, but pre-unblocking keeps runs deterministic.
+
+##### Useful Make targets for Ares
+* `make run-ares`:
+    Launches Ares in homebrew mode with no file prompt.
+* `make run-ares-debug`:
+    Launches Ares with debug server enabled and waits for a GDB client.
+* `make gdb`:
+    Connects the configured GDB client to the Ares debug port.
+
 #### Others
 * Add the required file to the correct folder on your SD card.
 
