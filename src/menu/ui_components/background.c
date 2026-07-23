@@ -22,6 +22,7 @@ typedef struct {
     rspq_block_t *image_display_list; /**< Display list for rendering the image. */
     bool cache_load_attempted; /**< Tracks whether lazy cache load has been attempted. */
     bool image_owned;          /**< True if image/surface memory should be freed on release. */
+    uint8_t *cache_buffer;     /**< Aligned runtime buffer used for cached background pixels. */
     surface_t cache_image;     /**< Surface wrapper for static cache buffer. */
 } component_background_t;
 
@@ -36,7 +37,8 @@ typedef struct {
 } cache_metadata_t;
 
 static component_background_t *background = NULL;
-static uint8_t background_cache_buffer[DISPLAY_WIDTH * DISPLAY_HEIGHT * 2] __attribute__((aligned(64)));
+
+#define BACKGROUND_CACHE_BUFFER_SIZE   (DISPLAY_WIDTH * DISPLAY_HEIGHT * 2)
 
 /**
  * @brief Load background image from cache file if available.
@@ -44,7 +46,7 @@ static uint8_t background_cache_buffer[DISPLAY_WIDTH * DISPLAY_HEIGHT * 2] __att
  * @param c Pointer to the background component structure.
  */
 static void load_from_cache(component_background_t *c) {
-    if (!c->cache_location) {
+    if (!c->cache_location || !c->cache_buffer) {
         return;
     }
 
@@ -69,12 +71,12 @@ static void load_from_cache(component_background_t *c) {
     uint16_t stride = TEX_FORMAT_PIX2BYTES(FMT_RGBA16, cache_metadata.width);
     uint32_t expected_size = (uint32_t)cache_metadata.height * (uint32_t)stride;
 
-    if (cache_metadata.size != expected_size || cache_metadata.size > sizeof(background_cache_buffer)) {
+    if (cache_metadata.size != expected_size || cache_metadata.size > BACKGROUND_CACHE_BUFFER_SIZE) {
         fclose(f);
         return;
     }
 
-    c->cache_image = surface_make(background_cache_buffer, FMT_RGBA16, cache_metadata.width, cache_metadata.height, stride);
+    c->cache_image = surface_make(c->cache_buffer, FMT_RGBA16, cache_metadata.width, cache_metadata.height, stride);
     c->image = &c->cache_image;
     c->image_owned = false;
 
@@ -222,6 +224,7 @@ void ui_components_background_init(char *cache_location) {
         background = calloc(1, sizeof(component_background_t));
         background->cache_location = strdup(cache_location);
         background->cache_load_attempted = false;
+        background->cache_buffer = aligned_alloc(64, BACKGROUND_CACHE_BUFFER_SIZE);
     }
 }
 
@@ -233,6 +236,9 @@ void ui_components_background_free(void) {
         release_image_resources(background, true);
         if (background->cache_location) {
             free(background->cache_location);
+        }
+        if (background->cache_buffer) {
+            free(background->cache_buffer);
         }
         free(background);
         background = NULL;
