@@ -180,7 +180,9 @@ static void menu_deinit (menu_t *menu) {
 
 static void menu_deinit_for_boot (menu_t *menu) {
     // Avoid UI component deferred-free paths that can block on real hardware.
+    debugf("Menu[boot-deinit]: start\n");
     hdmi_send_game_id(menu->boot_params);
+    debugf("Menu[boot-deinit]: hdmi_send_game_id done\n");
 
     path_free(menu->load.disk_slots.primary.disk_path);
     path_free(menu->load.rom_path);
@@ -189,17 +191,43 @@ static void menu_deinit_for_boot (menu_t *menu) {
     }
     free(menu->browser.list);
     path_free(menu->browser.directory);
+    debugf("Menu[boot-deinit]: menu allocations freed\n");
+
     free(menu);
+    debugf("Menu[boot-deinit]: menu struct freed\n");
 
     // Keep subsystem shutdown to leave the hardware in a clean pre-boot state.
+    debugf("Menu[boot-deinit]: display_close begin\n");
     display_close();
+    debugf("Menu[boot-deinit]: display_close done\n");
+
+    debugf("Menu[boot-deinit]: sound_deinit begin\n");
     sound_deinit();
+    debugf("Menu[boot-deinit]: sound_deinit done\n");
+
+    debugf("Menu[boot-deinit]: rspq_close begin\n");
     rspq_close();
+    debugf("Menu[boot-deinit]: rspq_close done\n");
+
+    debugf("Menu[boot-deinit]: rdpq_close begin\n");
     rdpq_close();
+    debugf("Menu[boot-deinit]: rdpq_close done\n");
+
+    debugf("Menu[boot-deinit]: rtc_close begin\n");
     rtc_close();
+    debugf("Menu[boot-deinit]: rtc_close done\n");
+
+    debugf("Menu[boot-deinit]: timer_close begin\n");
     timer_close();
+    debugf("Menu[boot-deinit]: timer_close done\n");
+
+    debugf("Menu[boot-deinit]: joypad_close begin\n");
     joypad_close();
+    debugf("Menu[boot-deinit]: joypad_close done\n");
+
+    debugf("Menu[boot-deinit]: flashcart_deinit begin\n");
     flashcart_deinit();
+    debugf("Menu[boot-deinit]: flashcart_deinit done\n");
 }
 
 /**
