@@ -184,7 +184,7 @@ static void display_list_free(void *arg) {
     rspq_block_free((rspq_block_t *) (arg));
 }
 
-static void release_image_resources(component_background_t *c) {
+static void release_image_resources(component_background_t *c, bool deferred) {
     if (!c) {
         return;
     }
@@ -196,7 +196,12 @@ static void release_image_resources(component_background_t *c) {
     }
 
     if (c->image_display_list) {
-        rdpq_call_deferred(display_list_free, c->image_display_list);
+        if (deferred) {
+            rdpq_call_deferred(display_list_free, c->image_display_list);
+        } else {
+            rspq_wait();
+            rspq_block_free(c->image_display_list);
+        }
         c->image_display_list = NULL;
     }
 }
@@ -220,7 +225,7 @@ void ui_components_background_init(char *cache_location) {
  */
 void ui_components_background_free(void) {
     if (background) {
-        release_image_resources(background);
+        release_image_resources(background, true);
         if (background->cache_location) {
             free(background->cache_location);
         }
@@ -230,7 +235,7 @@ void ui_components_background_free(void) {
 }
 
 void ui_components_background_release_image(void) {
-    release_image_resources(background);
+    release_image_resources(background, false);
 }
 
 void ui_components_background_reload_image(void) {
@@ -252,7 +257,7 @@ void ui_components_background_replace_image(surface_t *image) {
         return;
     }
 
-    release_image_resources(background);
+    release_image_resources(background, true);
 
     background->image = image;
     save_to_cache(background);

@@ -675,6 +675,8 @@ static void draw_progress (float progress) {
 
 static void load (menu_t *menu) {
     debugf("Load ROM: load function called\n");
+    ui_components_boxart_free(boxart);
+    boxart = NULL;
     ui_components_background_release_image();
 
     cart_load_err_t err;
@@ -690,6 +692,18 @@ static void load (menu_t *menu) {
 
     if (err != CART_LOAD_OK) {
         ui_components_background_reload_image();
+#ifdef FEATURE_AUTOLOAD_ROM_ENABLED
+        if (!menu->settings.rom_autoload_enabled) {
+#endif
+            boxart = ui_components_boxart_init(
+                menu->storage_prefix,
+                menu->load.rom_info.game_code,
+                menu->load.rom_info.title,
+                metadata_image_filename_cache[current_metadata_image_index]
+            );
+#ifdef FEATURE_AUTOLOAD_ROM_ENABLED
+        }
+#endif
         menu_show_error(menu, cart_load_convert_error_message(err));
         return;
     }
