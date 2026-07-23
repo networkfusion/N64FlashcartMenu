@@ -6,12 +6,6 @@
 #include "cic.h"
 #include "reboot.h"
 
-/**
- * Selects the base IO address for the configured boot device.
- *
- * @param params Boot parameters whose `device_type` determines the base.
- * @returns Pointer to the boot device base IO registers corresponding to `params->device_type` (e.g., `ROM_CART` or `ROM_DDIPL`).
- */
 static io32_t *boot_get_device_base (boot_params_t *params) {
     io32_t *device_base_address = ROM_CART;
     if (params->device_type == BOOT_DEVICE_TYPE_64DD) {
@@ -32,18 +26,8 @@ static cic_type_t boot_detect_cic (boot_params_t *params) {
     return cic_detect(ipl3);
 }
 
-/**
- * Prepare system hardware, load reboot code and IPL3, install cheats, and transfer control to the reboot routine using the provided boot parameters.
- *
- * This performs CIC detection (and optionally populates the CIC seed), normalizes passthrough TV type, configures and resets CPU/SP/PI/VI/AI state, programs PI DOM timing from the boot device, copies the reboot routine into SP IMEM and IPL3 into SP DMEM, installs cheats, arranges boot-time registers, and jumps to the in-memory reboot entry. If control returns, the function loops indefinitely.
- *
- * @param params Boot configuration and state. Fields read include device_type, tv_type, detect_cic_seed, and cheat_list. On return this function may modify params->tv_type (when passthrough normalization is applied) and params->cic_seed (when detect_cic_seed is true).
- */
 void boot (boot_params_t *params) {
-    debugf("Boot: entered device=%d tv=%d detect_cic=%d\n", params->device_type, params->tv_type, params->detect_cic_seed);
-
     cic_type_t cic_type = boot_detect_cic(params);
-    debugf("Boot: cic detected=%d\n", cic_type);
 
     if (params->detect_cic_seed) {
         params->cic_seed = cic_get_seed(cic_type);
@@ -66,13 +50,10 @@ void boot (boot_params_t *params) {
         }
     }
 
-    debugf("Boot: tv normalized=%d cic_seed=0x%02X\n", params->tv_type, params->cic_seed);
+    C0_WRITE_STATUS(C0_STATUS_CU1 | C0_STATUS_CU0 | C0_STATUS_FR);
+    C1_WRITE_FCR31(0);
 
-    debugf("Boot: deferring COP0/COP1 status setup to final jump\n");
-
-    debugf("Boot: waiting for SP halt\n");
     while (!(cpu_io_read(&SP->SR) & SP_SR_HALT));
-    debugf("Boot: SP halted\n");
 
     cpu_io_write(&SP->SR,
         SP_SR_CLR_SIG7 |
@@ -137,14 +118,13 @@ void boot (boot_params_t *params) {
     }
 
     bool cheats_installed = cheats_install(cic_type, params->cheat_list);
-    debugf("Boot: cheats installed=%d\n", cheats_installed);
 
-    uint32_t skip_rdram_reset;
-    uint32_t boot_device;
-    uint32_t tv_type;
-    uint32_t reset_type;
-    uint32_t cic_seed;
-    uint32_t version;
+    register uint32_t skip_rdram_reset asm ("a0");
+    register uint32_t boot_device asm ("s3");
+    register uint32_t tv_type asm ("s4");
+    register uint32_t reset_type asm ("s5");
+    register uint32_t cic_seed asm ("s6");
+    register uint32_t version asm ("s7");
 
     skip_rdram_reset = cheats_installed;
     boot_device = (params->device_type & 0x01);
@@ -157,27 +137,16 @@ void boot (boot_params_t *params) {
             : 0;
 
     asm volatile (
-        "move $a0, %[skip_rdram_reset] \n"
-        "move $s3, %[boot_device] \n"
-        "move $s4, %[tv_type] \n"
-        "move $s5, %[reset_type] \n"
-        "move $s6, %[cic_seed] \n"
-        "move $s7, %[version] \n"
-        "li $t3, %[c0_status] \n"
-        "mtc0 $t3, $12 \n"
-        "ctc1 $zero, $f31 \n"
         "la $t3, reboot \n"
         "jr $t3 \n" ::
-        [c0_status] "i" (C0_STATUS_CU1 | C0_STATUS_CU0 | C0_STATUS_FR),
         [skip_rdram_reset] "r" (skip_rdram_reset),
         [boot_device] "r" (boot_device),
         [tv_type] "r" (tv_type),
         [reset_type] "r" (reset_type),
         [cic_seed] "r" (cic_seed),
         [version] "r" (version) :
-        "t3", "a0", "s3", "s4", "s5", "s6", "s7", "memory"
+        "t3"
     );
 
-    debugf("Boot: unexpected return after reboot jump\n");
     while (1);
 }
