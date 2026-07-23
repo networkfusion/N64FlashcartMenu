@@ -190,20 +190,21 @@ static void release_image_resources(component_background_t *c, bool deferred) {
         return;
     }
 
-    if (c->image) {
-        surface_free(c->image);
-        free(c->image);
-        c->image = NULL;
-    }
-
     if (c->image_display_list) {
         if (deferred) {
             rdpq_call_deferred(display_list_free, c->image_display_list);
+            rspq_wait();
         } else {
             rspq_wait();
             rspq_block_free(c->image_display_list);
         }
         c->image_display_list = NULL;
+    }
+
+    if (c->image) {
+        surface_free(c->image);
+        free(c->image);
+        c->image = NULL;
     }
 }
 
