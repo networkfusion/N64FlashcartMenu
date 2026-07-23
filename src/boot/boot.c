@@ -156,8 +156,6 @@ void boot (boot_params_t *params) {
             : (params->tv_type == BOOT_TV_TYPE_MPAL) ? 4
             : 0;
 
-    debugf("Boot: handoff regs a0=%lu s3=%lu s4=%lu s5=%lu s6=0x%02lX s7=%lu\n", skip_rdram_reset, boot_device, tv_type, reset_type, cic_seed, version);
-
     asm volatile (
         "la $t3, reboot \n"
         "jr $t3 \n" ::
