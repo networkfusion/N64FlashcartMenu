@@ -178,6 +178,30 @@ static void menu_deinit (menu_t *menu) {
     flashcart_deinit();
 }
 
+static void menu_deinit_for_boot (menu_t *menu) {
+    // Avoid UI component deferred-free paths that can block on real hardware.
+    hdmi_send_game_id(menu->boot_params);
+
+    path_free(menu->load.disk_slots.primary.disk_path);
+    path_free(menu->load.rom_path);
+    for (int i = 0; i < menu->browser.entries; i++) {
+        free(menu->browser.list[i].name);
+    }
+    free(menu->browser.list);
+    path_free(menu->browser.directory);
+    free(menu);
+
+    // Keep subsystem shutdown to leave the hardware in a clean pre-boot state.
+    display_close();
+    sound_deinit();
+    rspq_close();
+    rdpq_close();
+    rtc_close();
+    timer_close();
+    joypad_close();
+    flashcart_deinit();
+}
+
 /**
  * @brief View structure containing initialization and display functions.
  */
@@ -276,9 +300,9 @@ void menu_run (boot_params_t *boot_params) {
     }
 
     if (menu->mode == MENU_MODE_BOOT) {
-        // Boot handoff does not return; avoid teardown paths that can block.
-        hdmi_send_game_id(menu->boot_params);
-        debugf("Menu: boot handoff path, skipping menu_deinit\n");
+        debugf("Menu: boot handoff path, using minimal deinit\n");
+        menu_deinit_for_boot(menu);
+        debugf("Menu: minimal deinit complete\n");
     } else {
         debugf("Menu: calling menu_deinit\n");
         menu_deinit(menu);
