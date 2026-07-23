@@ -215,8 +215,9 @@ void ui_components_background_init(char *cache_location) {
     if (!background) {
         background = calloc(1, sizeof(component_background_t));
         background->cache_location = strdup(cache_location);
-        load_from_cache(background);
-        prepare_background(background);
+
+        // Do not auto-load cached background at startup.
+        // Keeping this disabled avoids ROM launch regressions tied to cache data.
     }
 }
 
