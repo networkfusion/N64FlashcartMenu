@@ -139,12 +139,12 @@ void boot (boot_params_t *params) {
     bool cheats_installed = cheats_install(cic_type, params->cheat_list);
     debugf("Boot: cheats installed=%d\n", cheats_installed);
 
-    register uint32_t skip_rdram_reset asm ("a0");
-    register uint32_t boot_device asm ("s3");
-    register uint32_t tv_type asm ("s4");
-    register uint32_t reset_type asm ("s5");
-    register uint32_t cic_seed asm ("s6");
-    register uint32_t version asm ("s7");
+    uint32_t skip_rdram_reset;
+    uint32_t boot_device;
+    uint32_t tv_type;
+    uint32_t reset_type;
+    uint32_t cic_seed;
+    uint32_t version;
 
     skip_rdram_reset = cheats_installed;
     boot_device = (params->device_type & 0x01);
@@ -157,6 +157,12 @@ void boot (boot_params_t *params) {
             : 0;
 
     asm volatile (
+        "move $a0, %[skip_rdram_reset] \n"
+        "move $s3, %[boot_device] \n"
+        "move $s4, %[tv_type] \n"
+        "move $s5, %[reset_type] \n"
+        "move $s6, %[cic_seed] \n"
+        "move $s7, %[version] \n"
         "li $t3, %[c0_status] \n"
         "mtc0 $t3, $12 \n"
         "ctc1 $zero, $f31 \n"
@@ -169,7 +175,7 @@ void boot (boot_params_t *params) {
         [reset_type] "r" (reset_type),
         [cic_seed] "r" (cic_seed),
         [version] "r" (version) :
-        "t3"
+        "t3", "a0", "s3", "s4", "s5", "s6", "s7", "memory"
     );
 
     debugf("Boot: unexpected return after reboot jump\n");
