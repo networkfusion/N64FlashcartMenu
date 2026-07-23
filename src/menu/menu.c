@@ -225,9 +225,9 @@ static void menu_deinit_for_boot (menu_t *menu) {
     joypad_close();
     debugf("Menu[boot-deinit]: joypad_close done\n");
 
-    debugf("Menu[boot-deinit]: flashcart_deinit begin\n");
-    flashcart_deinit();
-    debugf("Menu[boot-deinit]: flashcart_deinit done\n");
+    // Skip flashcart_deinit here: this path immediately hands off to boot,
+    // and some carts can block during deinit/lock operations.
+    debugf("Menu[boot-deinit]: flashcart_deinit skipped\n");
 }
 
 /**
