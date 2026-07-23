@@ -68,7 +68,9 @@ void boot (boot_params_t *params) {
 
     debugf("Boot: tv normalized=%d cic_seed=0x%02X\n", params->tv_type, params->cic_seed);
 
-    debugf("Boot: skipping COP0/COP1 status writes\n");
+    debugf("Boot: setting COP0/COP1 status\n");
+    C0_WRITE_STATUS(C0_STATUS_CU1 | C0_STATUS_CU0 | C0_STATUS_FR);
+    C1_WRITE_FCR31(0);
 
     debugf("Boot: waiting for SP halt\n");
     while (!(cpu_io_read(&SP->SR) & SP_SR_HALT));
