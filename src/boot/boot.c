@@ -68,6 +68,9 @@ void boot (boot_params_t *params) {
 
     debugf("Boot: tv normalized=%d cic_seed=0x%02X\n", params->tv_type, params->cic_seed);
 
+    C0_WRITE_STATUS(C0_STATUS_CU1 | C0_STATUS_CU0 | C0_STATUS_FR);
+    C1_WRITE_FCR31(0);
+
     while (!(cpu_io_read(&SP->SR) & SP_SR_HALT));
 
     cpu_io_write(&SP->SR,
@@ -152,13 +155,11 @@ void boot (boot_params_t *params) {
             : (params->tv_type == BOOT_TV_TYPE_MPAL) ? 4
             : 0;
 
+    debugf("Boot: handoff regs a0=%lu s3=%lu s4=%lu s5=%lu s6=0x%02lX s7=%lu\n", skip_rdram_reset, boot_device, tv_type, reset_type, cic_seed, version);
+
     asm volatile (
-        "li $t3, %[c0_status] \n"
-        "mtc0 $t3, $12 \n"
-        "ctc1 $zero, $f31 \n"
         "la $t3, reboot \n"
         "jr $t3 \n" ::
-        [c0_status] "i" (C0_STATUS_CU1 | C0_STATUS_CU0 | C0_STATUS_FR),
         [skip_rdram_reset] "r" (skip_rdram_reset),
         [boot_device] "r" (boot_device),
         [tv_type] "r" (tv_type),
