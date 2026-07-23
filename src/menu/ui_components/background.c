@@ -20,6 +20,7 @@ typedef struct {
     char *cache_location;      /**< Path to the cache file location. */
     surface_t *image;          /**< Pointer to the loaded image surface. */
     rspq_block_t *image_display_list; /**< Display list for rendering the image. */
+    uint8_t *cache_buffer;     /**< Aligned runtime buffer for cache-backed background loads. */
 } component_background_t;
 
 /**
@@ -34,13 +35,15 @@ typedef struct {
 
 static component_background_t *background = NULL;
 
+#define BACKGROUND_CACHE_BUFFER_SIZE   (DISPLAY_WIDTH * DISPLAY_HEIGHT * 2)
+
 /**
  * @brief Load background image from cache file if available.
  *
  * @param c Pointer to the background component structure.
  */
 static void load_from_cache(component_background_t *c) {
-    if (!c->cache_location) {
+    if (!c->cache_location || !c->cache_buffer) {
         return;
     }
 
@@ -62,16 +65,16 @@ static void load_from_cache(component_background_t *c) {
         return;
     }
 
-    c->image = calloc(1, sizeof(surface_t));
-    *c->image = surface_alloc(FMT_RGBA16, cache_metadata.width, cache_metadata.height);
+    uint16_t stride = TEX_FORMAT_PIX2BYTES(FMT_RGBA16, cache_metadata.width);
+    uint32_t expected_size = (uint32_t)cache_metadata.height * (uint32_t)stride;
 
-    if (cache_metadata.size != (c->image->height * c->image->stride)) {
-        surface_free(c->image);
-        free(c->image);
-        c->image = NULL;
+    if (cache_metadata.size != expected_size || cache_metadata.size > BACKGROUND_CACHE_BUFFER_SIZE) {
         fclose(f);
         return;
     }
+
+    c->image = calloc(1, sizeof(surface_t));
+    *c->image = surface_make(c->cache_buffer, FMT_RGBA16, cache_metadata.width, cache_metadata.height, stride);
 
     if (fread(c->image->buffer, cache_metadata.size, 1, f) != 1) {
         surface_free(c->image);
@@ -193,6 +196,7 @@ void ui_components_background_init(char *cache_location) {
     if (!background) {
         background = calloc(1, sizeof(component_background_t));
         background->cache_location = strdup(cache_location);
+        background->cache_buffer = aligned_alloc(64, BACKGROUND_CACHE_BUFFER_SIZE);
         load_from_cache(background);
         prepare_background(background);
     }
@@ -214,6 +218,9 @@ void ui_components_background_free(void) {
         }
         if (background->cache_location) {
             free(background->cache_location);
+        }
+        if (background->cache_buffer) {
+            free(background->cache_buffer);
         }
         free(background);
         background = NULL;
