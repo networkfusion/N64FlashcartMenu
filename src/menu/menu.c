@@ -252,6 +252,7 @@ void menu_run (boot_params_t *boot_params) {
             }
 
             if (menu->mode == MENU_MODE_BOOT) {
+                debugf("Menu: MENU_MODE_BOOT reached, exiting menu loop\n");
                 break;
             }
 
@@ -274,7 +275,9 @@ void menu_run (boot_params_t *boot_params) {
         usb_comm_poll(menu);
     }
 
+    debugf("Menu: calling menu_deinit\n");
     menu_deinit(menu);
+    debugf("Menu: menu_deinit complete\n");
 
     while (exception_reset_time() > 0) {
         // Do nothing if reset button was pressed

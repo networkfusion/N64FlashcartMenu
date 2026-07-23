@@ -40,7 +40,10 @@ static cic_type_t boot_detect_cic (boot_params_t *params) {
  * @param params Boot configuration and state. Fields read include device_type, tv_type, detect_cic_seed, and cheat_list. On return this function may modify params->tv_type (when passthrough normalization is applied) and params->cic_seed (when detect_cic_seed is true).
  */
 void boot (boot_params_t *params) {
+    debugf("Boot: entered device=%d tv=%d detect_cic=%d\n", params->device_type, params->tv_type, params->detect_cic_seed);
+
     cic_type_t cic_type = boot_detect_cic(params);
+    debugf("Boot: cic detected=%d\n", cic_type);
 
     if (params->detect_cic_seed) {
         params->cic_seed = cic_get_seed(cic_type);
@@ -62,6 +65,8 @@ void boot (boot_params_t *params) {
                 break;
         }
     }
+
+    debugf("Boot: tv normalized=%d cic_seed=0x%02X\n", params->tv_type, params->cic_seed);
 
     while (!(cpu_io_read(&SP->SR) & SP_SR_HALT));
 
@@ -128,6 +133,7 @@ void boot (boot_params_t *params) {
     }
 
     bool cheats_installed = cheats_install(cic_type, params->cheat_list);
+    debugf("Boot: cheats installed=%d\n", cheats_installed);
 
     register uint32_t skip_rdram_reset asm ("a0");
     register uint32_t boot_device asm ("s3");
@@ -162,5 +168,6 @@ void boot (boot_params_t *params) {
         "t3"
     );
 
+    debugf("Boot: unexpected return after reboot jump\n");
     while (1);
 }

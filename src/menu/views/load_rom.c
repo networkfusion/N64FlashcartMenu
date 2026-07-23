@@ -709,9 +709,13 @@ static void load (menu_t *menu) {
         return;
     }
 
+    debugf("Load ROM: cart_load_n64_rom_and_save complete\n");
+
     bookkeeping_history_add(&menu->bookkeeping, menu->load.rom_path, NULL, BOOKKEEPING_TYPE_ROM);
+    debugf("Load ROM: history entry added\n");
 
     menu->next_mode = MENU_MODE_BOOT;
+    debugf("Load ROM: next_mode set to MENU_MODE_BOOT\n");
 
     menu->boot_params->device_type = BOOT_DEVICE_TYPE_ROM;
     menu->boot_params->detect_cic_seed = rom_info_get_cic_seed(&menu->load.rom_info, &menu->boot_params->cic_seed);
@@ -721,6 +725,7 @@ static void load (menu_t *menu) {
         case ROM_TV_TYPE_MPAL: menu->boot_params->tv_type = BOOT_TV_TYPE_MPAL; break;
         default: menu->boot_params->tv_type = BOOT_TV_TYPE_PASSTHROUGH; break;
     }
+    debugf("Load ROM: boot params set device=%d tv=%d detect_cic=%d\n", menu->boot_params->device_type, menu->boot_params->tv_type, menu->boot_params->detect_cic_seed);
 
     // Handle cheat codes only if Expansion Pak is present and cheats are enabled
     if (is_memory_expanded() && menu->load.rom_info.settings.cheats_enabled) {
@@ -749,6 +754,8 @@ static void load (menu_t *menu) {
         debugf("Cheats disabled or Expansion Pak not present\n");
         menu->boot_params->cheat_list = NULL;
     }
+
+    debugf("Load ROM: load() complete\n");
 }
 
 static void deinit (void) {
