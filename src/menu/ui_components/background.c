@@ -20,6 +20,7 @@ typedef struct {
     char *cache_location;      /**< Path to the cache file location. */
     surface_t *image;          /**< Pointer to the loaded image surface. */
     rspq_block_t *image_display_list; /**< Display list for rendering the image. */
+    bool cache_load_attempted; /**< Tracks whether lazy cache load has been attempted. */
 } component_background_t;
 
 /**
@@ -215,9 +216,7 @@ void ui_components_background_init(char *cache_location) {
     if (!background) {
         background = calloc(1, sizeof(component_background_t));
         background->cache_location = strdup(cache_location);
-
-        // Do not auto-load cached background at startup.
-        // Keeping this disabled avoids ROM launch regressions tied to cache data.
+        background->cache_load_attempted = false;
     }
 }
 
@@ -246,6 +245,7 @@ void ui_components_background_reload_image(void) {
 
     load_from_cache(background);
     prepare_background(background);
+    background->cache_load_attempted = true;
 }
 
 /**
@@ -263,12 +263,19 @@ void ui_components_background_replace_image(surface_t *image) {
     background->image = image;
     save_to_cache(background);
     prepare_background(background);
+    background->cache_load_attempted = true;
 }
 
 /**
  * @brief Draw the background image or clear the screen if not available.
  */
 void ui_components_background_draw(void) {
+    if (background && !background->image_display_list && !background->cache_load_attempted) {
+        load_from_cache(background);
+        prepare_background(background);
+        background->cache_load_attempted = true;
+    }
+
     if (background && background->image_display_list) {
         rspq_block_run(background->image_display_list);
     } else {
