@@ -21,6 +21,8 @@ typedef struct {
     surface_t *image;          /**< Pointer to the loaded image surface. */
     rspq_block_t *image_display_list; /**< Display list for rendering the image. */
     bool cache_load_attempted; /**< Tracks whether lazy cache load has been attempted. */
+    bool image_owned;          /**< True if image/surface memory should be freed on release. */
+    surface_t cache_image;     /**< Surface wrapper for static cache buffer. */
 } component_background_t;
 
 /**
@@ -34,6 +36,7 @@ typedef struct {
 } cache_metadata_t;
 
 static component_background_t *background = NULL;
+static uint8_t background_cache_buffer[DISPLAY_WIDTH * DISPLAY_HEIGHT * 2] __attribute__((aligned(64)));
 
 /**
  * @brief Load background image from cache file if available.
@@ -63,21 +66,21 @@ static void load_from_cache(component_background_t *c) {
         return;
     }
 
-    c->image = calloc(1, sizeof(surface_t));
-    *c->image = surface_alloc(FMT_RGBA16, cache_metadata.width, cache_metadata.height);
+    uint16_t stride = TEX_FORMAT_PIX2BYTES(FMT_RGBA16, cache_metadata.width);
+    uint32_t expected_size = (uint32_t)cache_metadata.height * (uint32_t)stride;
 
-    if (cache_metadata.size != (c->image->height * c->image->stride)) {
-        surface_free(c->image);
-        free(c->image);
-        c->image = NULL;
+    if (cache_metadata.size != expected_size || cache_metadata.size > sizeof(background_cache_buffer)) {
         fclose(f);
         return;
     }
 
+    c->cache_image = surface_make(background_cache_buffer, FMT_RGBA16, cache_metadata.width, cache_metadata.height, stride);
+    c->image = &c->cache_image;
+    c->image_owned = false;
+
     if (fread(c->image->buffer, cache_metadata.size, 1, f) != 1) {
-        surface_free(c->image);
-        free(c->image);
         c->image = NULL;
+        c->image_owned = false;
     }
 
     fclose(f);
@@ -201,11 +204,12 @@ static void release_image_resources(component_background_t *c, bool deferred) {
         c->image_display_list = NULL;
     }
 
-    if (c->image) {
+    if (c->image && c->image_owned) {
         surface_free(c->image);
         free(c->image);
-        c->image = NULL;
     }
+    c->image = NULL;
+    c->image_owned = false;
 }
 
 /**
@@ -262,6 +266,7 @@ void ui_components_background_replace_image(surface_t *image) {
     release_image_resources(background, true);
 
     background->image = image;
+    background->image_owned = true;
     save_to_cache(background);
     prepare_background(background);
     background->cache_load_attempted = true;
