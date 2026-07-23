@@ -27,6 +27,8 @@ static cic_type_t boot_detect_cic (boot_params_t *params) {
 }
 
 void boot (boot_params_t *params) {
+    debugf("Boot: entered\n");
+
     cic_type_t cic_type = boot_detect_cic(params);
 
     if (params->detect_cic_seed) {
@@ -53,7 +55,9 @@ void boot (boot_params_t *params) {
     C0_WRITE_STATUS(C0_STATUS_CU1 | C0_STATUS_CU0 | C0_STATUS_FR);
     C1_WRITE_FCR31(0);
 
+    debugf("Boot: waiting for SP halt\n");
     while (!(cpu_io_read(&SP->SR) & SP_SR_HALT));
+    debugf("Boot: SP halted\n");
 
     cpu_io_write(&SP->SR,
         SP_SR_CLR_SIG7 |
@@ -118,6 +122,7 @@ void boot (boot_params_t *params) {
     }
 
     bool cheats_installed = cheats_install(cic_type, params->cheat_list);
+    debugf("Boot: cheats installed=%d\n", cheats_installed);
 
     register uint32_t skip_rdram_reset asm ("a0");
     register uint32_t boot_device asm ("s3");
@@ -137,6 +142,7 @@ void boot (boot_params_t *params) {
             : 0;
 
     asm volatile (
+        "# boot handoff\n"
         "la $t3, reboot \n"
         "jr $t3 \n" ::
         [skip_rdram_reset] "r" (skip_rdram_reset),
