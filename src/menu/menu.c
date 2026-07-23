@@ -275,9 +275,15 @@ void menu_run (boot_params_t *boot_params) {
         usb_comm_poll(menu);
     }
 
-    debugf("Menu: calling menu_deinit\n");
-    menu_deinit(menu);
-    debugf("Menu: menu_deinit complete\n");
+    if (menu->mode == MENU_MODE_BOOT) {
+        // Boot handoff does not return; avoid teardown paths that can block.
+        hdmi_send_game_id(menu->boot_params);
+        debugf("Menu: boot handoff path, skipping menu_deinit\n");
+    } else {
+        debugf("Menu: calling menu_deinit\n");
+        menu_deinit(menu);
+        debugf("Menu: menu_deinit complete\n");
+    }
 
     while (exception_reset_time() > 0) {
         // Do nothing if reset button was pressed
