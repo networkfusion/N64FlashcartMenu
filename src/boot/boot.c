@@ -68,9 +68,7 @@ void boot (boot_params_t *params) {
 
     debugf("Boot: tv normalized=%d cic_seed=0x%02X\n", params->tv_type, params->cic_seed);
 
-    debugf("Boot: setting COP0/COP1 status\n");
-    C0_WRITE_STATUS(C0_STATUS_CU1 | C0_STATUS_CU0 | C0_STATUS_FR);
-    C1_WRITE_FCR31(0);
+    debugf("Boot: deferring COP0/COP1 status setup to final jump\n");
 
     debugf("Boot: waiting for SP halt\n");
     while (!(cpu_io_read(&SP->SR) & SP_SR_HALT));
@@ -159,8 +157,12 @@ void boot (boot_params_t *params) {
             : 0;
 
     asm volatile (
+        "li $t3, %[c0_status] \n"
+        "mtc0 $t3, $12 \n"
+        "ctc1 $zero, $f31 \n"
         "la $t3, reboot \n"
         "jr $t3 \n" ::
+        [c0_status] "i" (C0_STATUS_CU1 | C0_STATUS_CU0 | C0_STATUS_FR),
         [skip_rdram_reset] "r" (skip_rdram_reset),
         [boot_device] "r" (boot_device),
         [tv_type] "r" (tv_type),
