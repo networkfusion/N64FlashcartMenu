@@ -68,8 +68,12 @@ void boot (boot_params_t *params) {
 
     debugf("Boot: tv normalized=%d cic_seed=0x%02X\n", params->tv_type, params->cic_seed);
 
+    debugf("Boot: setting COP0 status\n");
     C0_WRITE_STATUS(C0_STATUS_CU1 | C0_STATUS_CU0 | C0_STATUS_FR);
-    C1_WRITE_FCR31(0);
+    debugf("Boot: COP0 status set\n");
+
+    // Avoid potential hardware-specific hazard on COP1 control write in this path.
+    // C1_WRITE_FCR31(0);
 
     debugf("Boot: waiting for SP halt\n");
     while (!(cpu_io_read(&SP->SR) & SP_SR_HALT));
