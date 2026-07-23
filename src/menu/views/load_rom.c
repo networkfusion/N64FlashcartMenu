@@ -675,6 +675,8 @@ static void draw_progress (float progress) {
 
 static void load (menu_t *menu) {
     debugf("Load ROM: load function called\n");
+    ui_components_background_release_image();
+
     cart_load_err_t err;
 #ifdef FEATURE_AUTOLOAD_ROM_ENABLED
     if (!menu->settings.loading_progress_bar_enabled) {
@@ -687,6 +689,7 @@ static void load (menu_t *menu) {
 #endif
 
     if (err != CART_LOAD_OK) {
+        ui_components_background_reload_image();
         menu_show_error(menu, cart_load_convert_error_message(err));
         return;
     }

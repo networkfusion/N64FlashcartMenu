@@ -184,6 +184,23 @@ static void display_list_free(void *arg) {
     rspq_block_free((rspq_block_t *) (arg));
 }
 
+static void release_image_resources(component_background_t *c) {
+    if (!c) {
+        return;
+    }
+
+    if (c->image) {
+        surface_free(c->image);
+        free(c->image);
+        c->image = NULL;
+    }
+
+    if (c->image_display_list) {
+        rdpq_call_deferred(display_list_free, c->image_display_list);
+        c->image_display_list = NULL;
+    }
+}
+
 /**
  * @brief Initialize the background component and load from cache.
  *
@@ -203,21 +220,26 @@ void ui_components_background_init(char *cache_location) {
  */
 void ui_components_background_free(void) {
     if (background) {
-        if (background->image) {
-            surface_free(background->image);
-            free(background->image);
-            background->image = NULL;
-        }
-        if (background->image_display_list) {
-            rdpq_call_deferred(display_list_free, background->image_display_list);
-            background->image_display_list = NULL;
-        }
+        release_image_resources(background);
         if (background->cache_location) {
             free(background->cache_location);
         }
         free(background);
         background = NULL;
     }
+}
+
+void ui_components_background_release_image(void) {
+    release_image_resources(background);
+}
+
+void ui_components_background_reload_image(void) {
+    if (!background || background->image) {
+        return;
+    }
+
+    load_from_cache(background);
+    prepare_background(background);
 }
 
 /**
@@ -230,16 +252,7 @@ void ui_components_background_replace_image(surface_t *image) {
         return;
     }
 
-    if (background->image) {
-        surface_free(background->image);
-        free(background->image);
-        background->image = NULL;
-    }
-
-    if (background->image_display_list) {
-        rdpq_call_deferred(display_list_free, background->image_display_list);
-        background->image_display_list = NULL;
-    }
+    release_image_resources(background);
 
     background->image = image;
     save_to_cache(background);

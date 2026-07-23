@@ -198,6 +198,16 @@ void ui_components_background_init(char *cache_location);
 void ui_components_background_free(void);
 
 /**
+ * @brief Release loaded background image resources while keeping cache path.
+ */
+void ui_components_background_release_image(void);
+
+/**
+ * @brief Reload background image resources from cache after release.
+ */
+void ui_components_background_reload_image(void);
+
+/**
  * @brief Replace the background image.
  * 
  * @param image New background image.
