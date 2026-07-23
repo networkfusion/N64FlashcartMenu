@@ -123,12 +123,6 @@ static void menu_init (boot_params_t *boot_params) {
     // bgm_init(path_get(path));
     // path_pop(path);
 
-    path_push(path, MENU_CACHE_DIRECTORY);
-    directory_create(path_get(path));
-
-    path_push(path, BACKGROUND_CACHE_FILE);
-    ui_components_background_init(path_get(path));
-
     path_free(path);
 
     sound_use_sfx(menu->settings.soundfx_enabled);
