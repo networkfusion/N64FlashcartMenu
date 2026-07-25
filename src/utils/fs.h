@@ -133,16 +133,6 @@ typedef enum {
 bool file_try_read_text_ex(const char *path, size_t max_size, char **contents, size_t *length, file_read_text_err_t *error);
 
 /**
- * @brief Read an exact number of bytes from a file into a caller-provided buffer.
- *
- * @param path The path to the file.
- * @param buffer Output buffer to fill.
- * @param size Number of bytes required.
- * @return true if exactly size bytes were read and the file was closed successfully.
- */
-bool file_try_read_exact(const char *path, void *buffer, size_t size);
-
-/**
  * @brief Check if a file has one of the specified extensions.
  *
  * Checks if the file at the given path has one of the specified extensions.

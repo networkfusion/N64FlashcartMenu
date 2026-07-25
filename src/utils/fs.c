@@ -256,28 +256,6 @@ bool file_try_read_text(const char *path, size_t max_size, char **contents, size
     return file_try_read_text_ex(path, max_size, contents, length, NULL);
 }
 
-bool file_try_read_exact(const char *path, void *buffer, size_t size) {
-    if ((path == NULL) || (buffer == NULL)) {
-        return false;
-    }
-
-    FILE *f = fopen(path, "rb");
-    if (f == NULL) {
-        return false;
-    }
-
-    bool ok = true;
-    if ((size > 0) && (fread(buffer, 1, size, f) != size)) {
-        ok = false;
-    }
-
-    if (fclose(f) != 0) {
-        ok = false;
-    }
-
-    return ok;
-}
-
 /**
  * @brief Check if a file has one of the specified extensions.
  *

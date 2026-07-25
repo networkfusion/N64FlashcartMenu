@@ -1321,15 +1321,20 @@ rom_err_t rom_config_setting_set_patches (path_t *path, rom_info_t *rom_info, bo
 #endif
 
 rom_err_t rom_config_load (path_t *path, rom_info_t *rom_info) {
+    FILE *f;
     rom_header_t rom_header;
     
     debugf("[META] rom_config_load: starting for '%s'\\n", path_get(path));
 
-    if (!file_exists(path_get(path))) {
+    if ((f = fopen(path_get(path), "rb")) == NULL) {
         return ROM_ERR_NO_FILE;
     }
-
-    if (!file_try_read_exact(path_get(path), &rom_header, sizeof(rom_header))) {
+    setbuf(f, NULL);
+    if (fread(&rom_header, sizeof(rom_header), 1, f) != 1) {
+        fclose(f);
+        return ROM_ERR_LOAD_IO;
+    }
+    if (fclose(f)) {
         return ROM_ERR_LOAD_IO;
     }
 
