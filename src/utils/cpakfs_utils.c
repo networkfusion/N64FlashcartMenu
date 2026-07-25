@@ -8,7 +8,9 @@
 #include <stdio.h>
 #include <libdragon.h>
 #include <errno.h>
+#include <limits.h>
 #include <dir.h>
+#include "fs.h"
 #include "cpakfs_utils.h"
 
 /**
@@ -46,14 +48,11 @@ int get_block_size_from_fs_path(const char *filename_cpak) {
  * @return The file size in bytes, or -1 on error.
  */
 int get_file_size_from_fs_path(const char *filename_cpak) {
-    FILE *f = fopen(filename_cpak, "rb");
-    if (!f) {
+    int64_t size = file_get_size((char *)filename_cpak);
+    if ((size < 0) || (size > INT_MAX)) {
         return -1;
     }
-    fseek(f, 0L, SEEK_END);
-    int sz = ftell(f);
-    fclose(f);
-    return sz;
+    return (int)size;
 }
 
 /**
@@ -393,7 +392,5 @@ int pick_unique_fullname_with_mount(const char *mount_prefix,
  * @return 1 if the file exists, 0 otherwise.
  */
 int file_exists_full(const char *full_mounted_path) {
-    FILE *f = fopen(full_mounted_path, "rb");
-    if (f) { fclose(f); return 1; }
-    return 0;
+    return file_exists((char *)full_mounted_path) ? 1 : 0;
 }
