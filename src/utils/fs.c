@@ -147,68 +147,6 @@ bool file_fill(char *path, uint8_t value) {
 }
 
 /**
- * @brief Read a text file into a newly allocated buffer.
- *
- * @param path The path to the file.
- * @param max_size Maximum allowed file size in bytes.
- * @param contents Output pointer receiving allocated text contents.
- * @param length Output pointer receiving file length (without terminator).
- * @return true if the file was read successfully, false otherwise.
- */
-bool file_try_read_text(const char *path, size_t max_size, char **contents, size_t *length) {
-    if ((path == NULL) || (contents == NULL) || (length == NULL)) {
-        return false;
-    }
-
-    *contents = NULL;
-    *length = 0;
-
-    FILE *f = fopen(path, "rb");
-    if (f == NULL) {
-        return false;
-    }
-
-    if (fseek(f, 0, SEEK_END) != 0) {
-        fclose(f);
-        return false;
-    }
-
-    long file_size_long = ftell(f);
-    if ((file_size_long <= 0) || ((size_t)file_size_long > max_size)) {
-        fclose(f);
-        return false;
-    }
-
-    size_t file_size = (size_t)file_size_long;
-    if (fseek(f, 0, SEEK_SET) != 0) {
-        fclose(f);
-        return false;
-    }
-
-    char *buffer = malloc(file_size + 1);
-    if (buffer == NULL) {
-        fclose(f);
-        return false;
-    }
-
-    if (fread(buffer, 1, file_size, f) != file_size) {
-        free(buffer);
-        fclose(f);
-        return false;
-    }
-
-    if (fclose(f) != 0) {
-        free(buffer);
-        return false;
-    }
-
-    buffer[file_size] = '\0';
-    *contents = buffer;
-    *length = file_size;
-    return true;
-}
-
-/**
  * @brief Check if a file has one of the specified extensions.
  *
  * Checks if the file at the given path has one of the specified extensions.

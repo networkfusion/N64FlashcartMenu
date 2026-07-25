@@ -92,19 +92,6 @@ bool file_allocate(char *path, size_t size);
 bool file_fill(char *path, uint8_t value);
 
 /**
- * @brief Read a text file into a newly allocated buffer.
- *
- * Reads the full file from disk into a heap-allocated, NUL-terminated buffer.
- *
- * @param path The path to the file.
- * @param max_size Maximum allowed file size in bytes.
- * @param contents Output pointer receiving allocated text contents.
- * @param length Output pointer receiving file length (without terminator).
- * @return true if the file was read successfully, false otherwise.
- */
-bool file_try_read_text(const char *path, size_t max_size, char **contents, size_t *length);
-
-/**
  * @brief Check if a file has one of the specified extensions.
  *
  * Checks if the file at the given path has one of the specified extensions.
