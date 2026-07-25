@@ -104,6 +104,34 @@ bool file_fill(char *path, uint8_t value);
  */
 bool file_try_read_text(const char *path, size_t max_size, char **contents, size_t *length);
 
+/** @brief Error codes for text file load helper. */
+typedef enum {
+	FILE_READ_TEXT_OK = 0,
+	FILE_READ_TEXT_ERR_INVALID_ARGS,
+	FILE_READ_TEXT_ERR_OPEN,
+	FILE_READ_TEXT_ERR_SEEK,
+	FILE_READ_TEXT_ERR_SIZE,
+	FILE_READ_TEXT_ERR_EMPTY,
+	FILE_READ_TEXT_ERR_TOO_BIG,
+	FILE_READ_TEXT_ERR_ALLOC,
+	FILE_READ_TEXT_ERR_READ,
+	FILE_READ_TEXT_ERR_CLOSE,
+} file_read_text_err_t;
+
+/**
+ * @brief Read a text file into a newly allocated buffer with detailed error codes.
+ *
+ * Reads the full file from disk into a heap-allocated, NUL-terminated buffer.
+ *
+ * @param path The path to the file.
+ * @param max_size Maximum allowed file size in bytes.
+ * @param contents Output pointer receiving allocated text contents.
+ * @param length Output pointer receiving file length (without terminator).
+ * @param error Output pointer receiving specific failure reason (optional).
+ * @return true if the file was read successfully, false otherwise.
+ */
+bool file_try_read_text_ex(const char *path, size_t max_size, char **contents, size_t *length, file_read_text_err_t *error);
+
 /**
  * @brief Check if a file has one of the specified extensions.
  *

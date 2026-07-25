@@ -155,8 +155,15 @@ bool file_fill(char *path, uint8_t value) {
  * @param length Output pointer receiving file length (without terminator).
  * @return true if the file was read successfully, false otherwise.
  */
-bool file_try_read_text(const char *path, size_t max_size, char **contents, size_t *length) {
+bool file_try_read_text_ex(const char *path, size_t max_size, char **contents, size_t *length, file_read_text_err_t *error) {
+    if (error) {
+        *error = FILE_READ_TEXT_OK;
+    }
+
     if ((path == NULL) || (contents == NULL) || (length == NULL)) {
+        if (error) {
+            *error = FILE_READ_TEXT_ERR_INVALID_ARGS;
+        }
         return false;
     }
 
@@ -165,39 +172,76 @@ bool file_try_read_text(const char *path, size_t max_size, char **contents, size
 
     FILE *f = fopen(path, "rb");
     if (f == NULL) {
+        if (error) {
+            *error = FILE_READ_TEXT_ERR_OPEN;
+        }
         return false;
     }
 
     if (fseek(f, 0, SEEK_END) != 0) {
+        if (error) {
+            *error = FILE_READ_TEXT_ERR_SEEK;
+        }
         fclose(f);
         return false;
     }
 
     long file_size_long = ftell(f);
-    if ((file_size_long <= 0) || ((size_t)file_size_long > max_size)) {
+    if (file_size_long < 0) {
+        if (error) {
+            *error = FILE_READ_TEXT_ERR_SIZE;
+        }
+        fclose(f);
+        return false;
+    }
+
+    if (file_size_long == 0) {
+        if (error) {
+            *error = FILE_READ_TEXT_ERR_EMPTY;
+        }
+        fclose(f);
+        return false;
+    }
+
+    if ((size_t)file_size_long > max_size) {
+        if (error) {
+            *error = FILE_READ_TEXT_ERR_TOO_BIG;
+        }
         fclose(f);
         return false;
     }
 
     size_t file_size = (size_t)file_size_long;
     if (fseek(f, 0, SEEK_SET) != 0) {
+        if (error) {
+            *error = FILE_READ_TEXT_ERR_SEEK;
+        }
         fclose(f);
         return false;
     }
 
     char *buffer = malloc(file_size + 1);
     if (buffer == NULL) {
+        if (error) {
+            *error = FILE_READ_TEXT_ERR_ALLOC;
+        }
         fclose(f);
         return false;
     }
 
     if (fread(buffer, 1, file_size, f) != file_size) {
+        if (error) {
+            *error = FILE_READ_TEXT_ERR_READ;
+        }
         free(buffer);
         fclose(f);
         return false;
     }
 
     if (fclose(f) != 0) {
+        if (error) {
+            *error = FILE_READ_TEXT_ERR_CLOSE;
+        }
         free(buffer);
         return false;
     }
@@ -206,6 +250,10 @@ bool file_try_read_text(const char *path, size_t max_size, char **contents, size
     *contents = buffer;
     *length = file_size;
     return true;
+}
+
+bool file_try_read_text(const char *path, size_t max_size, char **contents, size_t *length) {
+    return file_try_read_text_ex(path, max_size, contents, length, NULL);
 }
 
 /**
