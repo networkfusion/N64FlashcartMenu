@@ -2,7 +2,7 @@
 #include "datel_codes.h"
 #include <string.h>
 #include <libdragon.h> // only included for debugf
-#include "utils/fs.h"
+#include <sys/stat.h>
 #include "utils/utils.h"
 
 
@@ -10,6 +10,7 @@
 
 /** @brief Text file structure */
 typedef struct {
+    FILE *f; /**< File pointer */
     char *contents; /**< File contents */
     size_t length; /**< File length */
 } cheat_file_t;
@@ -116,6 +117,9 @@ void parse_cheat_code_string(cheat_file_code_t *code, const char *code_str) {
  */
 static void deinit_cheat_file (void) {
     if (cheat_file_text) {
+        if (cheat_file_text->f) {
+            fclose(cheat_file_text->f);
+        }
         if (cheat_file_text->contents) {
             free(cheat_file_text->contents);
         }
@@ -129,41 +133,46 @@ cheat_file_load_err_t open_cheat_file(char *path) {
         return CHEAT_FILE_LOAD_ERR_MEMORY_ALLOC_FAIL;
     }
 
-    file_read_text_err_t read_error = FILE_READ_TEXT_OK;
-    if (!file_try_read_text_ex(path, MAX_FILE_SIZE, &cheat_file_text->contents, &cheat_file_text->length, &read_error)) {
-        cheat_file_load_err_t mapped_error = CHEAT_FILE_LOAD_ERR_UNKNOWN;
-        switch (read_error) {
-            case FILE_READ_TEXT_ERR_OPEN:
-                mapped_error = CHEAT_FILE_LOAD_ERR_FILE_OPEN_FAIL;
-                break;
-            case FILE_READ_TEXT_ERR_SEEK:
-            case FILE_READ_TEXT_ERR_SIZE:
-                mapped_error = CHEAT_FILE_LOAD_ERR_FILE_STAT_FAIL;
-                break;
-            case FILE_READ_TEXT_ERR_EMPTY:
-                mapped_error = CHEAT_FILE_LOAD_ERR_FILE_EMPTY;
-                break;
-            case FILE_READ_TEXT_ERR_TOO_BIG:
-                mapped_error = CHEAT_FILE_LOAD_ERR_FILE_TOO_BIG;
-                break;
-            case FILE_READ_TEXT_ERR_ALLOC:
-                mapped_error = CHEAT_FILE_LOAD_ERR_FILE_CONTENTS_ALLOC_FAIL;
-                break;
-            case FILE_READ_TEXT_ERR_READ:
-                mapped_error = CHEAT_FILE_LOAD_ERR_FILE_READ_FAIL;
-                break;
-            case FILE_READ_TEXT_ERR_CLOSE:
-                mapped_error = CHEAT_FILE_LOAD_ERR_FILE_CLOSE_FAIL;
-                break;
-            case FILE_READ_TEXT_ERR_INVALID_ARGS:
-            case FILE_READ_TEXT_OK:
-            default:
-                mapped_error = CHEAT_FILE_LOAD_ERR_UNKNOWN;
-                break;
-        }
+    cheat_file_text->f = fopen(path, "r");
+
+    if (cheat_file_text->f == NULL) {
         deinit_cheat_file();
-        return mapped_error;
+        return CHEAT_FILE_LOAD_ERR_FILE_OPEN_FAIL;
     }
+
+    struct stat st;
+    if (fstat(fileno(cheat_file_text->f), &st)) {
+        deinit_cheat_file();
+        return CHEAT_FILE_LOAD_ERR_FILE_STAT_FAIL;
+    }
+    cheat_file_text->length = st.st_size;
+
+    if (cheat_file_text->length <= 0) {
+        deinit_cheat_file();
+        return CHEAT_FILE_LOAD_ERR_FILE_EMPTY;
+    }
+
+    if (cheat_file_text->length > MAX_FILE_SIZE) {
+        deinit_cheat_file();
+        return CHEAT_FILE_LOAD_ERR_FILE_TOO_BIG;
+    }
+
+    if ((cheat_file_text->contents = malloc((cheat_file_text->length + 1) * sizeof(char))) == NULL) {
+        deinit_cheat_file();
+        return CHEAT_FILE_LOAD_ERR_FILE_CONTENTS_ALLOC_FAIL;
+    }
+
+    if (fread(cheat_file_text->contents, cheat_file_text->length, 1, cheat_file_text->f) != 1) {
+        deinit_cheat_file();
+        return CHEAT_FILE_LOAD_ERR_FILE_READ_FAIL;
+    }
+    cheat_file_text->contents[cheat_file_text->length] = '\0';
+
+    if (fclose(cheat_file_text->f)) {
+        deinit_cheat_file();
+        return CHEAT_FILE_LOAD_ERR_FILE_CLOSE_FAIL;
+    }
+    cheat_file_text->f = NULL;
 
     return CHEAT_FILE_LOAD_OK;
 }
