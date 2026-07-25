@@ -14,7 +14,6 @@
 #include <errno.h>
 
 #include "ini_parser.h"
-#include "utils/fs.h"
 
 
 /** @brief Maximum number of key-value pairs (logical cap, not pre-allocated) */
@@ -418,20 +417,46 @@ ini_t* ini_parse_buffer(const char *buffer, size_t size) {
 
 ini_t* ini_load(const char *path) {
     if (!path) return ini_create();
-    char *buffer = NULL;
-    size_t read_size = 0;
-    file_read_text_err_t read_err = FILE_READ_TEXT_OK;
-    if (!file_try_read_text_ex(path, SIZE_MAX, &buffer, &read_size, &read_err)) {
-        if (read_err == FILE_READ_TEXT_ERR_OPEN) {
-            debugf("[INI] ini_load(%s): file not found\n", path);
-        }
-        if (read_err == FILE_READ_TEXT_ERR_EMPTY) {
-            return ini_create();
-        }
+    
+    // Try to open file
+    FILE *file = fopen(path, "rb");
+    if (!file) {
+        debugf("[INI] ini_load(%s): file not found\n", path);
+        return NULL;
+    }
+    
+    // Get file size
+    if (fseek(file, 0, SEEK_END) != 0) {
+        fclose(file);
+        return NULL;
+    }
+    long file_size = ftell(file);
+    if (file_size < 0 || fseek(file, 0, SEEK_SET) != 0) {
+        fclose(file);
+        return NULL;
+    }
+    
+    if (file_size == 0) {
+        fclose(file);
+        return ini_create();
+    }
+    
+    // Read file into buffer
+    char *buffer = malloc(file_size + 1);
+    if (!buffer) {
+        fclose(file);
+        return NULL;
+    }
+    
+    size_t read_size = fread(buffer, 1, file_size, file);
+    int close_rc = fclose(file);
+    if (read_size != (size_t)file_size || close_rc != 0) {
+        free(buffer);
         return NULL;
     }
 
     // Parse buffer in-place to avoid a second temporary copy.
+    buffer[read_size] = '\0';
     ini_t *ini = ini_parse_mutable_content(buffer, read_size);
     free(buffer);
     
