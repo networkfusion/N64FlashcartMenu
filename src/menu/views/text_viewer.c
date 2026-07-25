@@ -4,12 +4,10 @@
  * @ingroup ui_components
  */
 
-#include <stdio.h>
-#include <sys/stat.h>
-
 #include "../ui_components/constants.h"
 #include "../fonts.h"
 #include "../sound.h"
+#include "utils/fs.h"
 #include "utils/utils.h"
 #include "views.h"
 
@@ -17,7 +15,6 @@
 
 /** @brief Text file structure */
 typedef struct {
-    FILE *f; /**< File pointer */
     char *contents; /**< File contents */
     size_t length; /**< File length */
     int lines; /**< Number of lines */
@@ -117,9 +114,6 @@ static void draw (menu_t *menu, surface_t *d) {
  */
 static void deinit (void) {
     if (text) {
-        if (text->f) {
-            fclose(text->f);
-        }
         if (text->contents) {
             free(text->contents);
         }
@@ -139,47 +133,13 @@ void view_text_viewer_init (menu_t *menu) {
     }
 
     path_t *path = path_clone_push(menu->browser.directory, menu->browser.entry->name);
-    text->f = fopen(path_get(path), "r");
+    bool ok = file_try_read_text(path_get(path), MAX_FILE_SIZE, &text->contents, &text->length);
     path_free(path);
 
-    if (text->f == NULL) {
+    if (!ok) {
         deinit();
-        return menu_show_error(menu, "Couldn't open text file");
+        return menu_show_error(menu, "Couldn't read text file");
     }
-
-    struct stat st;
-    if (fstat(fileno(text->f), &st)) {
-        deinit();
-        return menu_show_error(menu, "Couldn't get text file size");
-    }
-    text->length = st.st_size;
-
-    if (text->length <= 0) {
-        deinit();
-        return menu_show_error(menu, "Text file is empty");
-    }
-
-    if (text->length > MAX_FILE_SIZE) {
-        deinit();
-        return menu_show_error(menu, "Text file is too big to be displayed");
-    }
-
-    if ((text->contents = malloc((text->length + 1) * sizeof(char))) == NULL) {
-        deinit();
-        return menu_show_error(menu, "Couldn't allocate memory for the text file contents");
-    }
-
-    if (fread(text->contents, text->length, 1, text->f) != 1) {
-        deinit();
-        return menu_show_error(menu, "Couldn't read text file contents");
-    }
-    text->contents[text->length] = '\0';
-
-    if (fclose(text->f)) {
-        deinit();
-        return menu_show_error(menu, "Couldn't close text file");
-    }
-    text->f = NULL;
 
     text->lines = 1;
     for (size_t i = 0; i < text->length; i++) {
