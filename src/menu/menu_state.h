@@ -84,7 +84,7 @@ typedef struct {
 /** @brief Disk slot structure for multi-disk 64DD games. */
 typedef struct {
     disk_slot_entry_t primary; // Primary disk slot
-    disk_slot_entry_t swap_slot[3]; // 3 swap slots
+    disk_slot_entry_t swap_slot[4]; // 4 swap slots (max 5 total disks: 1 primary + 4 swap)
 } disk_slot_t;
 
 /** @brief Menu Structure */

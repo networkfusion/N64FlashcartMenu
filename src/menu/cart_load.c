@@ -195,15 +195,23 @@ cart_load_err_t cart_load_64dd_ipl_and_disks (menu_t *menu, flashcart_progress_c
     path_free(path);
 
     int swap_disk_count = 0;
-    char *swap_disk_paths[3];
-    for (int i = 0; i < 3; i++) {
+    char *swap_disk_paths[4];
+    flashcart_disk_parameters_t swap_disk_parameters[4];
+    
+    // Load swap disk parameters (limit to 4 swap disks to match firmware capacity)
+    for (int i = 0; i < 4 && swap_disk_count < 4; i++) {
         if (menu->load.disk_slots.swap_slot[i].disk_path) {
-            swap_disk_paths[swap_disk_count++] = path_get(menu->load.disk_slots.swap_slot[i].disk_path);
+            swap_disk_paths[swap_disk_count] = path_get(menu->load.disk_slots.swap_slot[i].disk_path);
+            swap_disk_parameters[swap_disk_count].development_drive = (menu->load.disk_slots.swap_slot[i].disk_info.region == DISK_REGION_DEVELOPMENT);
+            swap_disk_parameters[swap_disk_count].disk_type = menu->load.disk_slots.swap_slot[i].disk_info.disk_type;
+            memcpy(swap_disk_parameters[swap_disk_count].bad_system_area_lbas, menu->load.disk_slots.swap_slot[i].disk_info.bad_system_area_lbas, sizeof(swap_disk_parameters[swap_disk_count].bad_system_area_lbas));
+            memcpy(swap_disk_parameters[swap_disk_count].defect_tracks, menu->load.disk_slots.swap_slot[i].disk_info.defect_tracks, sizeof(swap_disk_parameters[swap_disk_count].defect_tracks));
+            swap_disk_count++;
         }
     }
 
     if (swap_disk_count > 0) {
-        menu->flashcart_err = flashcart_load_64dd_disks(path_get(menu->load.disk_slots.primary.disk_path), &disk_parameters, swap_disk_paths, swap_disk_count);
+        menu->flashcart_err = flashcart_load_64dd_disks(path_get(menu->load.disk_slots.primary.disk_path), &disk_parameters, swap_disk_paths, swap_disk_parameters, swap_disk_count);
     } else {
         menu->flashcart_err = flashcart_load_64dd_disk(path_get(menu->load.disk_slots.primary.disk_path), &disk_parameters);
     }

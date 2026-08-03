@@ -123,7 +123,7 @@ typedef enum {
     DIAGNOSTIC_ID_VOLTAGE_TEMPERATURE = 0, /**< Combined voltage and temperature reading */
 } sc64_diagnostic_id_t;
 
-#define SC64_DISK_MAPPING_MAX_DISKS 4
+#define SC64_DISK_MAPPING_MAX_DISKS 5
 
 /** @brief The SC64 Disk Mapping Structure. */
 typedef struct {
@@ -131,7 +131,7 @@ typedef struct {
     struct {
         uint32_t thb_table; /**< THB table */
         uint32_t sector_table; /**< Sector table */
-    } disks[4]; /**< Array of disks */
+    } disks[5]; /**< Array of disks */
 } sc64_disk_mapping_t;
 
 /**
