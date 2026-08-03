@@ -195,12 +195,19 @@ cart_load_err_t cart_load_64dd_ipl_and_disks (menu_t *menu, flashcart_progress_c
     path_free(path);
 
     int swap_disk_count = 0;
-    char *swap_disk_paths[4];
-    flashcart_disk_parameters_t swap_disk_parameters[4];
+    char *swap_disk_paths[3];
+    flashcart_disk_parameters_t swap_disk_parameters[3];
     
-    // Load swap disk parameters (limit to 4 swap disks to match firmware capacity)
-    for (int i = 0; i < 4 && swap_disk_count < 4; i++) {
+    // Load swap disk parameters (limit to 3 swap disks to match current firmware capacity)
+    // Note: Can be increased to 4 when firmware is updated to DD_SD_MAX_DISKS = 5
+    // Validate that all swap disks match primary disk's region and type
+    for (int i = 0; i < 3 && swap_disk_count < 3; i++) {
         if (menu->load.disk_slots.swap_slot[i].disk_path) {
+            // Skip region mismatches - IPL is loaded once for primary's region
+            if (menu->load.disk_slots.swap_slot[i].disk_info.region != menu->load.disk_slots.primary.disk_info.region) {
+                continue;
+            }
+            
             swap_disk_paths[swap_disk_count] = path_get(menu->load.disk_slots.swap_slot[i].disk_path);
             swap_disk_parameters[swap_disk_count].development_drive = (menu->load.disk_slots.swap_slot[i].disk_info.region == DISK_REGION_DEVELOPMENT);
             swap_disk_parameters[swap_disk_count].disk_type = menu->load.disk_slots.swap_slot[i].disk_info.disk_type;

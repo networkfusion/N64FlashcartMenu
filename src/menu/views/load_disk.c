@@ -7,6 +7,7 @@
 #include <string.h>
 
 #define DISK_SLOTS_MAX 3 // Maximum number of disk slots supported (excluding the primary disk)
+// Note: Can be increased to 4 when firmware is updated to DD_SD_MAX_DISKS = 5
 
 static component_boxart_t *boxart;
 static char *disk_filename;
@@ -126,9 +127,13 @@ static void scan_for_swap_disks(menu_t *menu) {
         );
 
         if (err == DISK_OK) {
-            // Valid disk found - add to swap slots
-            menu->load.disk_slots.swap_slot[swap_disk_count].disk_path = candidate_path;
-            swap_disk_count++;
+            // Skip disks whose region doesn't match primary - IPL is loaded once for primary's region
+            if (menu->load.disk_slots.swap_slot[swap_disk_count].disk_info.region != menu->load.disk_slots.primary.disk_info.region) {
+                path_free(candidate_path);
+            } else {
+                menu->load.disk_slots.swap_slot[swap_disk_count].disk_path = candidate_path;
+                swap_disk_count++;
+            }
         } else {
             // Invalid disk - free the path
             path_free(candidate_path);
