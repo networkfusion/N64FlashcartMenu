@@ -3,10 +3,11 @@
     "build": {
         "dockerfile": "Dockerfile.sc64deployer"
     },
+    "runArgs": ["--add-host=host.docker.internal:host-gateway"],
     "mounts": [
         "source=n64flashcartmenu-flashcart-bashhistory,target=/commandhistory,type=volume"
     ],
-    "postCreateCommand": "git submodule update --init && cd ./libdragon && make clobber -j && make libdragon tools -j && make install tools-install -j",
+    "postCreateCommand": "git submodule update --init && cd ./libdragon && N64_INST=/opt/libdragon make clobber -j && N64_INST=/opt/libdragon make libdragon tools -j && N64_INST=/opt/libdragon make install tools-install -j",
     "customizations": {
         "vscode": {
             "extensions": [

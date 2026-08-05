@@ -3,6 +3,7 @@
 set -e
 
 REMOTE="--remote ${REMOTE:-host.docker.internal:9064}"
+# Note: if host.docker.internal doesn't resolve, set REMOTE=172.20.0.1:9064 (WSL vEthernet adapter IP)
 
 sc64deployer $REMOTE upload ./output/N64FlashcartMenu.n64
 
