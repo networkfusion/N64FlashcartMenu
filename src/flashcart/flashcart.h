@@ -100,6 +100,8 @@ typedef struct {
     flashcart_err_t (*get_button_state) (bool *pressed);
     /** @brief Query realtime voltage/temperature diagnostic data if supported. */
     flashcart_err_t (*get_voltage_temperature) (uint16_t *voltage_mv, int16_t *temperature_deci_c);
+    /** @brief Get the 96-bit unique device ID if supported. */
+    flashcart_err_t (*get_uid) (uint32_t uid[3]);
     /** @brief The flashcart set save type function */
     flashcart_err_t (*set_save_type) (flashcart_save_type_t save_type);
     /** @brief The flashcart set save writeback function */
@@ -234,6 +236,14 @@ bool flashcart_has_voltage_temperature (void);
  * @return flashcart_err_t Result code.
  */
 flashcart_err_t flashcart_get_voltage_temperature (uint16_t *voltage_mv, int16_t *temperature_deci_c);
+
+/**
+ * @brief Get the 96-bit unique device ID of the flashcart MCU.
+ *
+ * @param uid Output array of 3 uint32 words.
+ * @return flashcart_err_t Result code.
+ */
+flashcart_err_t flashcart_get_uid (uint32_t uid[3]);
 
 /**
 * @brief Set the next boot mode for the flashcart.

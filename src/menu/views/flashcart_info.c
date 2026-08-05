@@ -1,5 +1,6 @@
 #include "views.h"
 #include "../sound.h"
+#include <libdragon.h>
 #include <libcart/cart.h>
 
 static bool show_extra_info_message = false;
@@ -79,6 +80,20 @@ static const char *format_voltage_temperature (void) {
         temperature_whole,
         temperature_frac
     );
+    return buffer;
+}
+
+static const char *format_uid (void) {
+    static char buffer[32];
+    uint32_t uid[3] = {0, 0, 0};
+
+    if (flashcart_get_uid(uid) != FLASHCART_OK) {
+        debugf("[FLASHCART INFO] Failed to read UID\n");
+        return "Unavailable";
+    }
+
+    debugf("[FLASHCART INFO] UID: %08lX%08lX%08lX\n", uid[0], uid[1], uid[2]);
+    snprintf(buffer, sizeof(buffer), "%08lX%08lX%08lX", uid[0], uid[1], uid[2]);
     return buffer;
 }
 
@@ -173,10 +188,12 @@ static void draw (menu_t *menu, surface_t *d) {
             "Diagnostics:\n"
             "  Button Realtime: %s\n"
             "  Voltage / Temp: %s\n"
+            "  UID: %s\n"
             "\n"
             "Press L|Z to return.\n",
             format_button_state(),
-            format_voltage_temperature()
+            format_voltage_temperature(),
+            format_uid()
         );
     }
 

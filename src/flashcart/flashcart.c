@@ -108,6 +108,7 @@ static flashcart_t *flashcart = &((flashcart_t) {
     .load_64dd_disks = NULL,
     .get_button_state = NULL,
     .get_voltage_temperature = NULL,
+    .get_uid = NULL,
     .set_save_type = dummy_set_save_type,
     .set_save_writeback = NULL,
     .set_next_boot_mode = NULL,
@@ -429,6 +430,18 @@ flashcart_err_t flashcart_get_voltage_temperature (uint16_t *voltage_mv, int16_t
     }
 
     return flashcart->get_voltage_temperature(voltage_mv, temperature_deci_c);
+}
+
+flashcart_err_t flashcart_get_uid (uint32_t uid[3]) {
+    if (uid == NULL) {
+        return FLASHCART_ERR_ARGS;
+    }
+
+    if (!flashcart->get_uid) {
+        return FLASHCART_ERR_FUNCTION_NOT_SUPPORTED;
+    }
+
+    return flashcart->get_uid(uid);
 }
 
 /**

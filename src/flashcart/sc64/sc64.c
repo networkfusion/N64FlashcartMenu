@@ -769,6 +769,17 @@ static flashcart_err_t sc64_get_voltage_temperature (uint16_t *voltage_mv, int16
     return FLASHCART_OK;
 }
 
+static flashcart_err_t sc64_get_uid (uint32_t uid[3]) {
+    for (int i = 0; i < 3; i++) {
+        if (sc64_ll_get_diagnostic((sc64_diagnostic_id_t)(DIAGNOSTIC_ID_UID_WORD_0 + i), &uid[i]) != SC64_OK) {
+            debugf("[SC64] Failed to read UID word %d\n", i);
+            return FLASHCART_ERR_INT;
+        }
+    }
+    debugf("[SC64] UID: %08lX%08lX%08lX\n", uid[0], uid[1], uid[2]);
+    return FLASHCART_OK;
+}
+
 static flashcart_t flashcart_sc64 = {
     .init = sc64_init,
     .deinit = sc64_deinit,
@@ -782,6 +793,7 @@ static flashcart_t flashcart_sc64 = {
     .load_64dd_disks = sc64_load_64dd_disks,
     .get_button_state = sc64_get_button_state,
     .get_voltage_temperature = sc64_get_voltage_temperature,
+    .get_uid = sc64_get_uid,
     .set_save_type = sc64_set_save_type,
     .set_save_writeback = sc64_set_save_writeback,
     .set_next_boot_mode = sc64_set_bootmode,

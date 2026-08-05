@@ -121,6 +121,9 @@ typedef enum {
 /** @brief The SC64 Diagnostic ID Enumeration. */
 typedef enum {
     DIAGNOSTIC_ID_VOLTAGE_TEMPERATURE = 0, /**< Combined voltage and temperature reading */
+    DIAGNOSTIC_ID_UID_WORD_0 = 1,          /**< STM32 unique device ID word 0 (0x1FFF7590) */
+    DIAGNOSTIC_ID_UID_WORD_1 = 2,          /**< STM32 unique device ID word 1 (0x1FFF7594) */
+    DIAGNOSTIC_ID_UID_WORD_2 = 3,          /**< STM32 unique device ID word 2 (0x1FFF7598) */
 } sc64_diagnostic_id_t;
 
 #define SC64_DISK_MAPPING_MAX_DISKS 4
