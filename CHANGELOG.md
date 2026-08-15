@@ -41,6 +41,7 @@
 	
 
 ### Breaking changes
+- The Gameboy and gameboy color emulator have changed to use the `SRAM_BANKED` saves by default. Users can revert to the existing save type by using the original `FLASHCART_SAVE_TYPE_FLASHRAM_1MBIT` using the new emulator override file.
 
 ### Notes
 - Progress has been made towards disk swapping, but it is still WiP.

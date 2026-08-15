@@ -255,14 +255,12 @@ cart_load_err_t cart_load_emulator (menu_t *menu, cart_load_emu_type_t emu_type,
         case CART_LOAD_EMU_TYPE_GAMEBOY:
             emu_section = "gb";
             default_rom_filename = "gb.v64";
-            // TODO: Saves might be less problematic by using the FAKE type.
-            save_type = FLASHCART_SAVE_TYPE_FLASHRAM_1MBIT; //FLASHCART_SAVE_TYPE_FLASHRAM_FAKE;
+            save_type = FLASHCART_SAVE_TYPE_SRAM_BANKED;
             break;
         case CART_LOAD_EMU_TYPE_GAMEBOY_COLOR:
             emu_section = "gbc";
             default_rom_filename = "gbc.v64";
-            // TODO: Saves might be less problematic by using the FAKE type.
-            save_type = FLASHCART_SAVE_TYPE_FLASHRAM_1MBIT; //FLASHCART_SAVE_TYPE_FLASHRAM_FAKE;
+            save_type = FLASHCART_SAVE_TYPE_SRAM_BANKED;
             break;
         case CART_LOAD_EMU_TYPE_SEGA_GENERIC_8BIT:
             emu_section = "sega8bit";
