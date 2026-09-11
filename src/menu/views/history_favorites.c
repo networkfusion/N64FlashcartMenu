@@ -190,8 +190,9 @@ static void draw(menu_t *menu, surface_t *display) {
     ui_components_actions_bar_text_draw(
         STL_DEFAULT,
         ALIGN_CENTER, VALIGN_TOP,
-        "◀ Change Tab ▶\n"
-        "\n"
+        "▼▲ Scroll | ◀ Change Tab ▶\n"
+        "%s",
+        ctime(&menu->current_time)
     );    
 
     rdpq_detach_show();   
