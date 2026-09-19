@@ -3,7 +3,7 @@ FROM debian:trixie-slim
 # Minimal image: install only what's needed for building and the project's toolchain
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y build-essential doxygen git python3 wget nodejs npm npx
+    apt-get install -y build-essential doxygen git python3 wget nodejs npm
 
 # Install dotNet tools
 RUN wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh && \
