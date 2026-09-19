@@ -6,6 +6,7 @@ on:
       - main
       - develop
       - develop-docs
+      - test-doc-builder
   workflow_dispatch:
 
 # Minimal top-level permissions for non-deploy runs
