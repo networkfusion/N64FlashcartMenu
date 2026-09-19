@@ -7,8 +7,8 @@ RUN apt-get update && \
 
 # Install dotNet tools
 RUN wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh \
-    chmod +x ./dotnet-install.sh \
-    ./dotnet-install.sh --version latest \
+    chmod +x ./dotnet-install.sh && \
+    ./dotnet-install.sh --channel LTS && \
     rm dotnet-install.sh
 
 # Install libdragon toolchain (packaged .deb)
