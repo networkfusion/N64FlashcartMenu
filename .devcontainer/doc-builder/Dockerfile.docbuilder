@@ -6,7 +6,10 @@ RUN apt-get update && \
     apt-get install -y build-essential doxygen git python3 wget nodejs npm 
 
 # Install dotNet tools
-RUN wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
+RUN wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh \
+    chmod +x ./dotnet-install.sh \
+    ./dotnet-install.sh --version latest \
+    rm dotnet-install.sh
 
 # Install libdragon toolchain (packaged .deb)
 RUN wget https://github.com/DragonMinded/libdragon/releases/download/toolchain-continuous-prerelease/gcc-toolchain-mips64-x86_64.deb && \
