@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0
+FROM mcr.microsoft.com/dotnet/sdk:10.0
 
 # Minimal image: install only what's needed for building and the project's toolchain
 RUN apt-get update && \
