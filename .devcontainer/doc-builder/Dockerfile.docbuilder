@@ -11,6 +11,10 @@ RUN wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh && \
     ./dotnet-install.sh --channel LTS && \
     rm dotnet-install.sh
 
+# Configure environment variables so the system can find dotnet
+ENV DOTNET_ROOT=/root/.dotnet
+ENV PATH=$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools
+
 # Install libdragon toolchain (packaged .deb)
 RUN wget https://github.com/DragonMinded/libdragon/releases/download/toolchain-continuous-prerelease/gcc-toolchain-mips64-x86_64.deb && \
     dpkg -i gcc-toolchain-mips64-x86_64.deb && \
