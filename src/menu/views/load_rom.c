@@ -1038,7 +1038,14 @@ void view_load_rom_init (menu_t *menu) {
                 );
             }
             if (boxart == NULL) {
+                // The embedded entry passed the scan-time ZIP existence/size check but could
+                // not actually be extracted or decoded; fall back to SD-card artwork instead
+                // of leaving the ROM info screen without any boxart.
                 ui_components_background_reload();
+                boxart = ui_components_boxart_init(
+                    menu->storage_prefix, menu->load.rom_info.game_code,
+                    menu->load.rom_info.title, IMAGE_BOXART_FRONT
+                );
             }
         } else {
             boxart = ui_components_boxart_init(

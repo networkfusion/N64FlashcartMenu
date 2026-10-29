@@ -1239,7 +1239,11 @@ bool rom_info_metadata_image_exists(const rom_info_t *rom_info, const char *file
     if (!mz_zip_reader_init_file(&zip, rom_info->meta.metadata_zip_path, 0)) return false;
 
     mz_uint index = mz_zip_reader_locate_file(&zip, filename, NULL, MZ_ZIP_FLAG_CASE_SENSITIVE);
-    bool exists = index != MZ_UINT32_MAX;
+    mz_zip_archive_file_stat stat;
+    // Also check the size cap enforced by rom_info_extract_metadata_image, so a declared
+    // entry that could never be extracted isn't reported as usable.
+    bool exists = index != MZ_UINT32_MAX && mz_zip_reader_file_stat(&zip, index, &stat) &&
+                  stat.m_uncomp_size > 0 && stat.m_uncomp_size <= 2 * 1024 * 1024;
     mz_zip_reader_end(&zip);
     return exists;
 }
