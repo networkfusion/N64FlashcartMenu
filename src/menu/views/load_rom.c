@@ -34,6 +34,11 @@ static bool metadata_image_available[METADATA_IMAGE_CACHE_MAX];
 static uint16_t metadata_image_count;
 static bool metadata_images_scanned = false;
 
+/** Embedded metadata images only support PNG; JPEG decoding is not implemented (jpeg_decoder.c is a stub). */
+static bool is_unsupported_embedded_image(const char *filename) {
+    return file_has_extensions((char *) filename, (const char *[]) { "jpg", "jpeg", NULL });
+}
+
 static void scan_metadata_images(menu_t *menu) {
     if (metadata_images_scanned) {
         return;
@@ -43,6 +48,7 @@ static void scan_metadata_images(menu_t *menu) {
     if (menu->load.rom_info.meta.metadata_zip_path) {
         for (uint16_t i = 0; i < 6 && metadata_image_count < METADATA_IMAGE_CACHE_MAX; i++) {
             if (menu->load.rom_info.meta.boxart[i] && menu->load.rom_info.meta.boxart[i][0] &&
+                !is_unsupported_embedded_image(menu->load.rom_info.meta.boxart[i]) &&
                 rom_info_metadata_image_exists(&menu->load.rom_info, menu->load.rom_info.meta.boxart[i])) {
                 metadata_image_names[metadata_image_count] = menu->load.rom_info.meta.boxart[i];
                 metadata_image_embedded[metadata_image_count] = true;
@@ -51,6 +57,7 @@ static void scan_metadata_images(menu_t *menu) {
         }
         for (uint16_t i = 0; i < 2 && metadata_image_count < METADATA_IMAGE_CACHE_MAX; i++) {
             if (menu->load.rom_info.meta.cartart[i] && menu->load.rom_info.meta.cartart[i][0] &&
+                !is_unsupported_embedded_image(menu->load.rom_info.meta.cartart[i]) &&
                 rom_info_metadata_image_exists(&menu->load.rom_info, menu->load.rom_info.meta.cartart[i])) {
                 metadata_image_names[metadata_image_count] = menu->load.rom_info.meta.cartart[i];
                 metadata_image_embedded[metadata_image_count] = true;
@@ -58,7 +65,8 @@ static void scan_metadata_images(menu_t *menu) {
             }
         }
         for (uint16_t i = 0; i < menu->load.rom_info.meta.screenshot_count && metadata_image_count < METADATA_IMAGE_CACHE_MAX; i++) {
-            if (rom_info_metadata_image_exists(&menu->load.rom_info, menu->load.rom_info.meta.screenshots[i])) {
+            if (!is_unsupported_embedded_image(menu->load.rom_info.meta.screenshots[i]) &&
+                rom_info_metadata_image_exists(&menu->load.rom_info, menu->load.rom_info.meta.screenshots[i])) {
                 metadata_image_names[metadata_image_count] = menu->load.rom_info.meta.screenshots[i];
                 metadata_image_embedded[metadata_image_count] = true;
                 metadata_image_available[metadata_image_count++] = true;
