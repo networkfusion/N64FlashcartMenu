@@ -1229,6 +1229,21 @@ bool rom_info_extract_metadata_image(const rom_info_t *rom_info, const char *fil
     return ok;
 }
 
+bool rom_info_metadata_image_exists(const rom_info_t *rom_info, const char *filename) {
+    if (!rom_info || !rom_info->meta.metadata_zip_path || !filename ||
+        filename[0] == '/' || strstr(filename, "..") != NULL) {
+        return false;
+    }
+
+    mz_zip_archive zip = {0};
+    if (!mz_zip_reader_init_file(&zip, rom_info->meta.metadata_zip_path, 0)) return false;
+
+    mz_uint index = mz_zip_reader_locate_file(&zip, filename, NULL, MZ_ZIP_FLAG_CASE_SENSITIVE);
+    bool exists = index != MZ_UINT32_MAX;
+    mz_zip_reader_end(&zip);
+    return exists;
+}
+
 void rom_info_free_meta(rom_info_t *rom_info) {
     if (!rom_info) {
         return;
