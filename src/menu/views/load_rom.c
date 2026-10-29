@@ -927,15 +927,19 @@ static void load (menu_t *menu) {
     menu->boot_params->clear_rdram = menu->load.rom_info.settings.clear_rdram_enabled;
 }
 
-static void deinit (void) {
-    ui_components_boxart_free(boxart);
-    boxart = NULL;
-    ui_components_background_reload();
+/**
+ * @brief Reset cached metadata image scan state.
+ *
+ * `metadata_image_names` entries for embedded images are borrowed pointers into
+ * `menu->load.rom_info.meta` (boxart/cartart/screenshots); this must be called before
+ * that metadata is freed (rom_info_free_meta) or replaced, otherwise a later
+ * scan_metadata_images() no-op or image cycling could use stale/dangling names.
+ */
+static void reset_metadata_image_cache (void) {
     current_metadata_image_index = 0;
     metadata_images_scanned = false;
     metadata_image_count = 0;
 
-    // Clear availability cache
     for (uint16_t i = 0; i < METADATA_IMAGE_CACHE_MAX; i++) {
         metadata_image_available[i] = false;
         metadata_image_embedded[i] = false;
@@ -943,8 +947,20 @@ static void deinit (void) {
     }
 }
 
+static void deinit (void) {
+    ui_components_boxart_free(boxart);
+    boxart = NULL;
+    ui_components_background_reload();
+    reset_metadata_image_cache();
+}
+
 
 void view_load_rom_init (menu_t *menu) {
+    // Must run unconditionally before any rom_info_free_meta()/rom_config_load() below:
+    // metadata_image_names may hold borrowed pointers into the ROM metadata about to be
+    // freed/replaced (e.g. on the Datel code editor return path, which skips deinit()).
+    reset_metadata_image_cache();
+
 #ifdef FEATURE_AUTOLOAD_ROM_ENABLED
     if (!menu->settings.rom_autoload_enabled) {
 #endif
