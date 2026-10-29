@@ -1064,7 +1064,11 @@ void view_load_rom_display (menu_t *menu, surface_t *display) {
     process(menu);
 
     if (!is_memory_expanded() && boxart != NULL && !boxart->loading && boxart->image == NULL) {
+        // Decode failed (or produced no image); drop the unusable component so this
+        // branch doesn't keep reloading the background every frame indefinitely.
         ui_components_background_reload();
+        ui_components_boxart_free(boxart);
+        boxart = NULL;
     }
 
     draw(menu, display);
