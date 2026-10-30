@@ -406,6 +406,16 @@ static void iterate_metadata_image(menu_t *menu, int direction) {
     scan_metadata_images(menu);
     if (metadata_image_count == 0) return;
     bool low_memory_mode = !is_memory_expanded();
+
+    // In expanded-memory mode the current boxart isn't freed up front before swapping
+    // (unlike low-memory mode, where freeing it also aborts its decode via
+    // ui_components_boxart_free()). If it's still loading, the single-instance PNG decoder
+    // is busy, so any new extraction attempt here would just waste a ZIP extraction and
+    // fail with PNG_ERR_BUSY. Skip it and let the current decode finish first.
+    if (!low_memory_mode && boxart != NULL && boxart->loading) {
+        return;
+    }
+
     int16_t previous_metadata_image_index = current_metadata_image_index;
 
     // Transverse to next/previous available image based on direction (1 = next, -1 = previous)
