@@ -1248,6 +1248,33 @@ bool rom_info_metadata_image_exists(const rom_info_t *rom_info, const char *file
     return exists;
 }
 
+bool rom_info_metadata_image_is_png(const rom_info_t *rom_info, const char *filename) {
+    if (!rom_info || !rom_info->meta.metadata_zip_path || !filename ||
+        filename[0] == '/' || strstr(filename, "..") != NULL) {
+        return false;
+    }
+
+    mz_zip_archive zip = {0};
+    if (!mz_zip_reader_init_file(&zip, rom_info->meta.metadata_zip_path, 0)) return false;
+
+    mz_uint index = mz_zip_reader_locate_file(&zip, filename, NULL, MZ_ZIP_FLAG_CASE_SENSITIVE);
+    bool is_png = false;
+    if (index != MZ_UINT32_MAX) {
+        // Read just the PNG file signature (8 bytes) via the streaming iterator API, so we
+        // don't need to decompress the whole entry just to check its content type.
+        static const uint8_t png_signature[8] = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
+        uint8_t header[sizeof(png_signature)];
+        mz_zip_reader_extract_iter_state *iter = mz_zip_reader_extract_iter_new(&zip, index, 0);
+        if (iter) {
+            is_png = mz_zip_reader_extract_iter_read(iter, header, sizeof(header)) == sizeof(header) &&
+                     memcmp(header, png_signature, sizeof(header)) == 0;
+            mz_zip_reader_extract_iter_free(iter);
+        }
+    }
+    mz_zip_reader_end(&zip);
+    return is_png;
+}
+
 void rom_info_free_meta(rom_info_t *rom_info) {
     if (!rom_info) {
         return;
