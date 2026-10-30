@@ -13,6 +13,7 @@ static bool show_extra_info_message = false;
 static bool show_advanced_info_message = false;
 static bool show_expansion_pak_warning = false;
 static component_boxart_t *boxart;
+static bool boxart_sd_fallback_attempted = false;
 static char *rom_filename = NULL;
 
 static int16_t current_metadata_image_index = 0;
@@ -453,6 +454,9 @@ static void iterate_metadata_image(menu_t *menu, int direction) {
                 }
                 boxart = new_boxart;
                 current_metadata_image_index = new_metadata_image_index;
+                // The user picked a different image; allow the SD-card fallback in
+                // view_load_rom_display() to run again if this new one fails to decode.
+                boxart_sd_fallback_attempted = false;
                 sound_play_effect(SFX_SETTING);
                 break;
             } else if (low_memory_mode) {
@@ -947,6 +951,7 @@ static void reset_metadata_image_cache (void) {
     current_metadata_image_index = 0;
     metadata_images_scanned = false;
     metadata_image_count = 0;
+    boxart_sd_fallback_attempted = false;
 
     for (uint16_t i = 0; i < METADATA_IMAGE_CACHE_MAX; i++) {
         metadata_image_available[i] = false;
@@ -1042,12 +1047,14 @@ void view_load_rom_init (menu_t *menu) {
                 // not actually be extracted or decoded; fall back to SD-card artwork instead
                 // of leaving the ROM info screen without any boxart.
                 ui_components_background_reload();
+                boxart_sd_fallback_attempted = true;
                 boxart = ui_components_boxart_init(
                     menu->storage_prefix, menu->load.rom_info.game_code,
                     menu->load.rom_info.title, IMAGE_BOXART_FRONT
                 );
             }
         } else {
+            boxart_sd_fallback_attempted = true;
             boxart = ui_components_boxart_init(
                 menu->storage_prefix, menu->load.rom_info.game_code,
                 menu->load.rom_info.title, IMAGE_BOXART_FRONT
@@ -1065,15 +1072,22 @@ void view_load_rom_display (menu_t *menu, surface_t *display) {
 
     if (boxart != NULL && !boxart->loading && boxart->image == NULL) {
         // Decode failed (or produced no image), on either memory configuration; drop the
-        // unusable component and fall back to SD-card artwork instead of leaving the ROM
-        // info screen without any boxart. ui_components_background_reload() is a no-op if
-        // the background was never freed (i.e. on an expanded-memory system).
+        // unusable component. ui_components_background_reload() is a no-op if the
+        // background was never freed (i.e. on an expanded-memory system).
         ui_components_background_reload();
         ui_components_boxart_free(boxart);
-        boxart = ui_components_boxart_init(
-            menu->storage_prefix, menu->load.rom_info.game_code,
-            menu->load.rom_info.title, IMAGE_BOXART_FRONT
-        );
+        boxart = NULL;
+
+        // Fall back to SD-card artwork instead of leaving the ROM info screen without any
+        // boxart, but only once per selected image: if the fallback itself fails to decode,
+        // retrying it here every frame would retry the same unusable file forever.
+        if (!boxart_sd_fallback_attempted) {
+            boxart_sd_fallback_attempted = true;
+            boxart = ui_components_boxart_init(
+                menu->storage_prefix, menu->load.rom_info.game_code,
+                menu->load.rom_info.title, IMAGE_BOXART_FRONT
+            );
+        }
     }
 
     draw(menu, display);
