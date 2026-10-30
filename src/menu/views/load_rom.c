@@ -27,7 +27,7 @@ static const file_image_type_t metadata_image_types[] = {
     IMAGE_GAMEPAK_FRONT,
     IMAGE_GAMEPAK_BACK
 };
-#define METADATA_IMAGE_CACHE_MAX (14)
+#define METADATA_IMAGE_CACHE_MAX (6 /* boxart */ + 2 /* cartart */ + ROM_METADATA_MAX_SCREENSHOTS /* screenshots */)
 static const uint16_t metadata_image_type_count = sizeof(metadata_image_types) / sizeof(metadata_image_types[0]);
 static const char *metadata_image_names[METADATA_IMAGE_CACHE_MAX];
 static bool metadata_image_embedded[METADATA_IMAGE_CACHE_MAX];
