@@ -37,10 +37,14 @@ static void png_decoder_callback(png_err_t err, surface_t *decoded_image, void *
  * Used to decode images (e.g. box/cart art, screenshots) extracted directly from a ROM's
  * embedded metadata ZIP, rather than loaded from an SD card file path.
  *
- * @note Only PNG is supported; JPEG decoding is not yet implemented on this menu (jpeg_decoder.c
- * is currently a stub), so JPEG-named embedded images are rejected rather than silently failing.
+ * @note Only PNG is supported; JPEG decoding is not yet implemented on this menu
+ * (jpeg_decoder.c is currently a stub). Callers are expected to have already validated
+ * that `data` is PNG content (e.g. via rom_info_metadata_image_is_png()) before calling
+ * this; it no longer re-checks the filename extension, since the embedded ZIP entry's
+ * actual filename may not reflect its real content (see scan_metadata_images()).
  *
- * @param filename Filename of the image within the ZIP (used only to check its extension).
+ * @param filename Filename of the image within the ZIP; kept for API compatibility, not
+ * used to decide the decoding format.
  * @param data Heap buffer containing the raw image data; ownership is transferred to this function.
  * @param size Size of `data` in bytes.
  * @param max_width Maximum width to decode the image to.
@@ -49,11 +53,7 @@ static void png_decoder_callback(png_err_t err, surface_t *decoded_image, void *
  */
 component_boxart_t *ui_components_boxart_init_mem(const char *filename, void *data, size_t size,
                                                   int max_width, int max_height) {
-    if (file_has_extensions((char *) filename, (const char *[]) { "jpg", "jpeg", NULL })) {
-        // JPEG decoding isn't supported yet; avoid pretending otherwise.
-        free(data);
-        return NULL;
-    }
+    (void) filename;
 
     component_boxart_t *b = calloc(1, sizeof(component_boxart_t));
     if (!b) {
