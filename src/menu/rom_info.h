@@ -9,9 +9,12 @@
 #define ROM_INFO_H__
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #include "path.h"
+
+#define ROM_METADATA_MAX_SCREENSHOTS 8
 
 /** @brief ROM error enumeration. */
 typedef enum {
@@ -175,9 +178,25 @@ typedef struct {
         uint32_t num_players;       /**< The number of players supported */
         char *short_description;    /**< The short game description */
         char *long_description_fn;  /**< The long game description file name */
+        char *metadata_zip_path;    /**< ZIP containing metadata images, if any */
+        char *boxart[6];            /**< Spec-defined boxart filenames: front, back, top, bottom, left, right */
+        char *cartart[2];           /**< Spec-defined boxart filenames: front, back */
+        char *screenshots[ROM_METADATA_MAX_SCREENSHOTS]; /**< Spec-defined screenshot filenames */
+        uint8_t screenshot_count;   /**< Number of screenshot filenames */
         bool size_limit_exceeded;   /**< Metadata was skipped because metadata.ini exceeded size cap */
     } meta;                         /**< The ROM metadata */
 } rom_info_t;
+
+/** Extract a metadata image from the associated ZIP into a heap buffer. */
+bool rom_info_extract_metadata_image(const rom_info_t *rom_info, const char *filename,
+                                     uint8_t **data, size_t *size);
+
+/** Check whether a named entry exists in the ROM's embedded metadata ZIP, without extracting it. */
+bool rom_info_metadata_image_exists(const rom_info_t *rom_info, const char *filename);
+
+/** Check whether a named entry in the ROM's embedded metadata ZIP is PNG, by content (file
+ *  signature), not by filename, without extracting the whole entry. */
+bool rom_info_metadata_image_is_png(const rom_info_t *rom_info, const char *filename);
 
 /**
  * @brief Get the CIC seed for the ROM.

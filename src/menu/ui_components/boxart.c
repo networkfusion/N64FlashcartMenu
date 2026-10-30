@@ -32,6 +32,45 @@ static void png_decoder_callback(png_err_t err, surface_t *decoded_image, void *
 }
 
 /**
+ * @brief Initialize a boxart component from an in-memory image buffer.
+ *
+ * Used to decode images (e.g. box/cart art, screenshots) extracted directly from a ROM's
+ * embedded metadata ZIP, rather than loaded from an SD card file path.
+ *
+ * @note Only PNG is supported; JPEG decoding is not yet implemented on this menu
+ * (jpeg_decoder.c is currently a stub). Callers are expected to have already validated
+ * that `data` is PNG content (e.g. via rom_info_metadata_image_is_png()) before calling
+ * this; it no longer re-checks the filename extension, since the embedded ZIP entry's
+ * actual filename may not reflect its real content (see scan_metadata_images()).
+ *
+ * @param filename Filename of the image within the ZIP; kept for API compatibility, not
+ * used to decide the decoding format.
+ * @param data Heap buffer containing the raw image data; ownership is transferred to this function.
+ * @param size Size of `data` in bytes.
+ * @param max_width Maximum width to decode the image to.
+ * @param max_height Maximum height to decode the image to.
+ * @return Pointer to the initialized boxart component, or NULL on failure (in which case `data` is freed).
+ */
+component_boxart_t *ui_components_boxart_init_mem(const char *filename, void *data, size_t size,
+                                                  int max_width, int max_height) {
+    (void) filename;
+
+    component_boxart_t *b = calloc(1, sizeof(component_boxart_t));
+    if (!b) {
+        free(data);
+        return NULL;
+    }
+    b->loading = true;
+
+    png_err_t png_err = png_decoder_start_mem(data, size, max_width, max_height, png_decoder_callback, b);
+    if (png_err == PNG_OK) return b;
+    if (png_err == PNG_ERR_BUSY) free(data);
+
+    free(b);
+    return NULL;
+}
+
+/**
  * @brief Initialize and load the boxart component for a game.
  *
  * Attempts to locate and load the appropriate boxart image for the given game code and ROM title.
