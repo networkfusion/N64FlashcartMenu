@@ -409,6 +409,7 @@ static void iterate_metadata_image(menu_t *menu, int direction) {
     // Transverse to next/previous available image based on direction (1 = next, -1 = previous)
     int16_t start_metadata_image_index = current_metadata_image_index;
     int16_t new_metadata_image_index = (current_metadata_image_index + direction + metadata_image_count) % metadata_image_count;
+    bool swapped = false;
 
     // Find next available image from our cached list
     while (new_metadata_image_index != start_metadata_image_index) {
@@ -458,44 +459,50 @@ static void iterate_metadata_image(menu_t *menu, int direction) {
                 // view_load_rom_display() to run again if this new one fails to decode.
                 boxart_sd_fallback_attempted = false;
                 sound_play_effect(SFX_SETTING);
-                break;
-            } else if (low_memory_mode) {
-                // Best effort restore of previous image after a failed low-memory swap.
-                if (metadata_image_available[previous_metadata_image_index]) {
-                    if (metadata_image_embedded[previous_metadata_image_index]) {
-                        uint8_t *data = NULL;
-                        size_t size = 0;
-                        if (!is_memory_expanded()) {
-                            ui_components_background_image_free_only();
-                        }
-                        if (rom_info_extract_metadata_image(
-                                &menu->load.rom_info,
-                                metadata_image_names[previous_metadata_image_index],
-                                &data, &size)) {
-                            boxart = ui_components_boxart_init_mem(
-                                metadata_image_names[previous_metadata_image_index], data, size,
-                                BOXART_WIDTH_MAX, BOXART_HEIGHT_MAX
-                            );
-                        }
-                        if (boxart == NULL) {
-                            ui_components_background_reload();
-                        }
-                    } else {
-                        boxart = ui_components_boxart_init(
-                            menu->storage_prefix,
-                            menu->load.rom_info.game_code,
-                            menu->load.rom_info.title,
-                            metadata_image_types[previous_metadata_image_index]
-                        );
-                    }
-                }
-                if (boxart == NULL) {
-                    menu_show_error(menu, "Could not swap boxart image");
-                }
+                swapped = true;
                 break;
             }
+            // Extraction/decode failed. Rather than getting stuck on this entry, keep
+            // searching the remaining candidates for one that actually loads (on Jumper
+            // Pak, boxart is already NULL here, since it was freed above).
         }
         new_metadata_image_index = (new_metadata_image_index + direction + metadata_image_count) % metadata_image_count;
+    }
+
+    if (!swapped && low_memory_mode && boxart == NULL) {
+        // Every other candidate failed to load; best-effort restore of the previous image
+        // so the screen doesn't stay blank.
+        if (metadata_image_available[previous_metadata_image_index]) {
+            if (metadata_image_embedded[previous_metadata_image_index]) {
+                uint8_t *data = NULL;
+                size_t size = 0;
+                if (!is_memory_expanded()) {
+                    ui_components_background_image_free_only();
+                }
+                if (rom_info_extract_metadata_image(
+                        &menu->load.rom_info,
+                        metadata_image_names[previous_metadata_image_index],
+                        &data, &size)) {
+                    boxart = ui_components_boxart_init_mem(
+                        metadata_image_names[previous_metadata_image_index], data, size,
+                        BOXART_WIDTH_MAX, BOXART_HEIGHT_MAX
+                    );
+                }
+                if (boxart == NULL) {
+                    ui_components_background_reload();
+                }
+            } else {
+                boxart = ui_components_boxart_init(
+                    menu->storage_prefix,
+                    menu->load.rom_info.game_code,
+                    menu->load.rom_info.title,
+                    metadata_image_types[previous_metadata_image_index]
+                );
+            }
+        }
+        if (boxart == NULL) {
+            menu_show_error(menu, "Could not swap boxart image");
+        }
     }
 }
 
