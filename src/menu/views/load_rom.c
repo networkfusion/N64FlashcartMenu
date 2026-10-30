@@ -1063,12 +1063,17 @@ void view_load_rom_init (menu_t *menu) {
 void view_load_rom_display (menu_t *menu, surface_t *display) {
     process(menu);
 
-    if (!is_memory_expanded() && boxart != NULL && !boxart->loading && boxart->image == NULL) {
-        // Decode failed (or produced no image); drop the unusable component so this
-        // branch doesn't keep reloading the background every frame indefinitely.
+    if (boxart != NULL && !boxart->loading && boxart->image == NULL) {
+        // Decode failed (or produced no image), on either memory configuration; drop the
+        // unusable component and fall back to SD-card artwork instead of leaving the ROM
+        // info screen without any boxart. ui_components_background_reload() is a no-op if
+        // the background was never freed (i.e. on an expanded-memory system).
         ui_components_background_reload();
         ui_components_boxart_free(boxart);
-        boxart = NULL;
+        boxart = ui_components_boxart_init(
+            menu->storage_prefix, menu->load.rom_info.game_code,
+            menu->load.rom_info.title, IMAGE_BOXART_FRONT
+        );
     }
 
     draw(menu, display);
