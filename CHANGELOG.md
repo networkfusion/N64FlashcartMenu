@@ -4,10 +4,56 @@
 - For the 64Drive, use the `menu.bin` file in the root of your SD card.
 - For the ares emulator, use the `N64FlashcartMenu.n64` file.
 
-## Release Notes 2026-Vnext
+## Release Notes 202x-vNext
 
 - **New Features**
 	- ~~Browser now allows hiding files and folders with hidden attributes set (thanks [Xeroxxx](https://github.com/Xeroxxx)).~~ Awaiting performance enhancement.
+	- JPEG image decoding.
+	- Added Custom background music support.
+	- File browser filetype images.
+	- Menu now dogfoods embedded metadata.
+	- Menu now shows embedded metadata box/game/screenshot images in the boxart view.
+	- Menu colour themes.
+
+
+- **Bug Fixes**
+	- Some users have reported crashes in Zelda OOT (anti-piracy checks), The boot function now resets the VI (mainly H-Sync) registers to fix the issue.
+	- Certain Aleck64 conversions failed to boot.
+	- `DE` cheat codes no longer consume the next cheat line like other conditional opcodes (`D0`, `D1`, `D2`, `D3`).
+  	- `DE` opcodes are still ignored by the cheat engine, but they don't prevent the next line from executing anymore.
+  	- E.g., `DE000400 0000` followed by `EE000000 0000` (for 1080° Snowboarding) would previously skip the `EE` line, causing the game to freeze at startup.
+
+- **Documentation**
+	- Improve documents with new features.
+
+- **Refactor**
+	- Settings is now a tab.
+	- Expansion Pak requirements now aligns with homebrew spec.
+	- Generation of DFS has been reorganised to use folders rather than a flat filesystem.
+
+- **Other**
+	- Change the default BGM to a different (more subtle) tune. The original is still included in the ROM image.
+	- Menu will now show an error if it detects a low voltage on startup.
+	- Fast Reboot support has been disabled in favour of ROM autoload due to too many issues being reported.
+	- Added ED64 OS3.06 firmware files.
+	- Deprecated functions have been removed.
+
+### Breaking changes
+- None.
+
+### Notes
+- A new version of the SMSPlus64 emulator is available: https://github.com/fhoedemakers/smsplus64/releases/tag/v0.9
+
+### Current known Issues
+- Rebooting a 64DD disk once will result in a blank screen. Twice will return to menu.
+- PixelFX HDMI mods may need to be updated to latest FW to support display.
+
+### Deprecation notices
+- None.
+
+## Release Notes 2026-08-26 - Tagged 0.3.3
+
+- **New Features**
 	- Adds Background music.
 	- Adds ability to use infinite scroll within the file browser.
 	- ROM override submenu now remembers current custom settings.
@@ -19,11 +65,13 @@
 	- Add progress of save file creation on ROM load.
 	- Add ability to override emulator configurations through INI file.
 	- Add option to clear RDRAM on a per ROM basis (required for RTYI demo).
+	- Add ROM additional metadata (Maximum number of simultaneous players that the game supports).
+	- Add warning before loading a ROM requiring an Expansion Pak that isn't present for supported ROMs.
 	
-
 - **Bug Fixes**
 	- CPak manager: Large Controller Paks with more than 123 pages are now shown properly.
 	- CPak notes backup and restore now works with invalid FAT characters.
+	- Move CA and KR ROM tv types to NTSC.
 
 - **Documentation**
 	- Improved DD section with latest information.
@@ -40,19 +88,20 @@
 	
 
 ### Breaking changes
+- None.
 
 ### Notes
 - Progress has been made towards disk swapping, but it is still WiP.
+- RTYI Demo requires the new "Clear RDRAM on boot" ROM override to work.
 
 ### Current known Issues
-- Menu sound FX may not work properly when a 64 Disk Drive is also attached (work around: turn sound FX off).
 - Fast Rebooting a 64DD disk once will result in a blank screen. Twice will return to menu. This is expected until disk swapping is fully implemented.
 - Some users have reported crashes in Zelda OOT (anti-piracy checks). Menu V0.2.0 works as expected.
 - PixelFX HDMI mods may need to be updated to latest FW to support display.
 
-
 ### Deprecation notices
 - None.
+
 
 ## Release Notes 2026-05-23 - Tagged 0.3.2
 
