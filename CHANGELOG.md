@@ -17,6 +17,7 @@
 
 
 - **Bug Fixes**
+	- Homebrew ROM information now reads Expansion Pak and region-free settings from the Advanced Homebrew ROM Header.
 	- Some users have reported crashes in Zelda OOT (anti-piracy checks), The boot function now resets the VI (mainly H-Sync) registers to fix the issue.
 	- Certain Aleck64 conversions failed to boot.
 	- `DE` cheat codes no longer consume the next cheat line like other conditional opcodes (`D0`, `D1`, `D2`, `D3`).
