@@ -82,8 +82,13 @@ bool ui_components_context_menu_process(menu_t *menu, component_context_menu_t *
             }
             cm->submenu->parent = cm;
         } else if (cm->list[cm->row_selected].action) {
+            bool stay = cm->list[cm->row_selected].stay;   // SC64SS: a setting: the menu stays, at its top
             cm->list[cm->row_selected].action(menu, cm->list[cm->row_selected].arg);
-            top->hide_pending = true;
+            if (stay) {
+                top->submenu = NULL;
+            } else {
+                top->hide_pending = true;
+            }
         }
         sound_play_effect(SFX_ENTER);
     } else if (menu->actions.go_up) {
@@ -131,6 +136,7 @@ void ui_components_context_menu_draw(component_context_menu_t *cm) {
 
     for (int i = 0; i < cm->row_count; i++) {
         const char *text = cm->list[i].text;
+        rdpq_paragraph_builder_style(cm->list[i].gray ? STL_GRAY : STL_DEFAULT);   // SC64SS: a grayed row
         rdpq_paragraph_builder_span(text, strlen(text));
         if (cm->list[i + 1].text != NULL) {
             rdpq_paragraph_builder_newline();

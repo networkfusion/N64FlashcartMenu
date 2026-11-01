@@ -425,6 +425,61 @@ void view_extract_file_init(menu_t *menu);
 void view_extract_file_display(menu_t *menu, surface_t *display);
 
 /**
+ * @brief SC64SS: initialize the save state hotkeys view.
+ *
+ * @param menu Pointer to the menu structure.
+ */
+void view_hotkeys_init(menu_t *menu);
+
+/**
+ * @brief SC64SS: display the save state hotkeys view.
+ *
+ * @param menu Pointer to the menu structure.
+ * @param display Pointer to the display surface.
+ */
+void view_hotkeys_display(menu_t *menu, surface_t *display);
+
+/**
+ * @brief SC64SS: initialize the virtual Controller Paks view.
+ *
+ * @param menu Pointer to the menu structure.
+ */
+void view_virtual_pak_init(menu_t *menu);
+
+/**
+ * @brief SC64SS: display the virtual Controller Paks view.
+ *
+ * @param menu Pointer to the menu structure.
+ * @param display Pointer to the display surface.
+ */
+void view_virtual_pak_display(menu_t *menu, surface_t *display);
+
+/**
+ * @brief SC64SS: the game's file name kept beside its virtual pak, so the paks view can name it.
+ *
+ * @param pak_path The pak file (sd:/savestates/paks/<check code>.pak).
+ * @param rom_name The ROM's file name.
+ */
+void sc64ss_vpak_label_store(const char *pak_path, const char *rom_name);
+
+/**
+ * @brief SC64SS: a freshly formatted one-bank Controller Pak image, as a game's virtual pak starts.
+ *
+ * @param img The 32 KiB buffer to fill.
+ * @param crc1 The ROM's check code, high word (seeds the pak's serial).
+ * @param crc2 The ROM's check code, low word.
+ */
+void sc64ss_pak_format(uint8_t *img, uint32_t crc1, uint32_t crc2);
+
+/**
+ * @brief SC64SS: screenshots a game left in the pending folder, moved to the game's own.
+ *
+ * @param storage_prefix The storage prefix ("sd:").
+ */
+void sc64ss_shots_finish(const char *storage_prefix);
+void ui_components_file_list_set_width(int width);   // SC64SS: 0 = the full width (a preview beside the list otherwise)
+
+/**
  * @brief Show an error message in the menu.
  *
  * @param menu Pointer to the menu structure.

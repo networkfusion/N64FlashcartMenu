@@ -5,6 +5,8 @@
 #include "cheats.h"
 #include "cic.h"
 #include "reboot.h"
+#include "vr4300_asm.h"
+#include "../flashcart/sc64/sc64_ll.h"
 
 /**
  * Selects the base IO address for the configured boot device.
@@ -32,6 +34,71 @@ static cic_type_t boot_detect_cic (boot_params_t *params) {
     return cic_detect(ipl3);
 }
 
+// SC64SS: libdragon's IPL3 carries a 16-byte aligned banner inside the boot code
+static bool boot_ipl3_is_libdragon (io32_t *base) {
+    for (uint32_t off = 0x40; off < 0x1000; off += 16) {
+        if ((io_read((uint32_t) (base) + off) == 0x204C6962UL) && (io_read((uint32_t) (base) + off + 4) == 0x64726167UL)) {
+            return true;   // " Lib" "drag"
+        }
+    }
+    return false;
+}
+
+// SC64SS: the ROM offset of the hand-off in libdragon's IPL3 stage three: a `jr a0` whose
+// delay slot sets the stack pointer, between the boot code and the ELF header. 0 unless it
+// is found exactly once.
+static uint32_t boot_libdragon_handoff (io32_t *base) {
+    uint32_t elf = 0;
+    for (uint32_t off = 0x1000; off < 0x20000; off += 0x100) {
+        if (io_read((uint32_t) (base) + off) == 0x7F454C46UL) {
+            elf = off;
+            break;
+        }
+    }
+    if (elf == 0) {
+        return 0;
+    }
+    uint32_t found = 0;
+    uint32_t n = 0;
+    for (uint32_t off = 0x1000; (off + 4) < elf; off += 4) {
+        if (io_read((uint32_t) (base) + off) == 0x00800008UL) {
+            uint32_t slot = io_read((uint32_t) (base) + off + 4) & 0xFC1FFFFFUL;
+            if ((slot == 0x0000E825UL) || (slot == 0x0000E821UL)) {
+                found = off;
+                n++;
+            }
+        }
+    }
+    return (n == 1) ? found : 0;
+}
+
+// SC64SS: everything the stub restores goes to the cart now, while the patcher and the
+// engine's temporary copy are still in RAM; then the hand-off is pointed at the stub.
+static void boot_libdragon_stage (io32_t *base, uint32_t handoff) {
+    // the menu locked the cart's registers and disabled ROM writes on its way out
+    io_write(0x1FFF0010UL, 0);
+    io_write(0x1FFF0010UL, 0x5F554E4CUL);
+    io_write(0x1FFF0010UL, 0x4F434B5FUL);
+    sc64_ll_set_config(CFG_ID_ROM_WRITE_ENABLE, true);
+    // (uncached reads: the emitters wrote their caches back, and the rest of each 4 KiB
+    // is whatever RAM held, never run)
+    const volatile uint32_t *patcher = (const volatile uint32_t *) (0xA0000000UL | (SC64SS_LDBOOT_PATCHER_RAM & 0x1FFFFFFFUL));
+    const volatile uint32_t *engine = (const volatile uint32_t *) (0xA0000000UL | (SC64SS_LDBOOT_ENGINE_RAM & 0x1FFFFFFFUL));
+    for (uint32_t i = 0; i < SC64SS_LDBOOT_REGION_WORDS; i++) {
+        io_write(SC64SS_LDBOOT_PI + SC64SS_LDBOOT_PATCHER_OFF + (4 * i), patcher[i]);
+        io_write(SC64SS_LDBOOT_PI + SC64SS_LDBOOT_ENGINE_OFF + (4 * i), engine[i]);
+    }
+    uint32_t stub[32];
+    uint32_t n = cheats_libdragon_stub(stub);
+    for (uint32_t i = 0; i < n; i++) {
+        io_write(SC64SS_LDBOOT_PI + (4 * i), stub[i]);
+    }
+    io_write((uint32_t) (base) + handoff, I_J(0xB0000000UL | SC64SS_LDBOOT_PI));
+    // breadcrumbs in the cart's block RAM, for a PC to read: the hand-off's offset, a tag
+    io_write(0x1FFE0FF0UL, handoff);
+    io_write(0x1FFE0FF4UL, 0x4C444254UL);
+}
+
 /**
  * Prepare system hardware, load reboot code and IPL3, install cheats, and transfer control to the reboot routine using the provided boot parameters.
  *
@@ -41,6 +108,10 @@ static cic_type_t boot_detect_cic (boot_params_t *params) {
  */
 void boot (boot_params_t *params) {
     cic_type_t cic_type = boot_detect_cic(params);
+    // SC64SS: whether the ROM boots with libdragon's boot code, read here (the CIC detection
+    // reads the ROM the same way), not after the PI reset below: read there, the console hung
+    // on every game.
+    bool libdragon = boot_ipl3_is_libdragon(boot_get_device_base(params));
 
     if (params->detect_cic_seed) {
         params->cic_seed = cic_get_seed(cic_type);
@@ -98,21 +169,30 @@ void boot (boot_params_t *params) {
 
     // Fully re-Initialize VI registers (all booted ROMs should do their own initialization)
     // Disabling the VI output before clearing the timing registers.
-
-    cpu_io_write(&VI->CR, 0); /**< Control Register. (this requires a reset due to libdragon between August 2023 and April 2025) */
     cpu_io_write(&VI->V_INTR, 0x3FF); /*< Vertical Interrupt. */
     cpu_io_write(&VI->H_LIMITS, 0); /*< Horizontal Limits. */
     cpu_io_write(&VI->CURR_LINE, 0); /*< Current Scanline. */
-    cpu_io_write(&VI->MADDR, 0); /**< Memory Address. */
-    cpu_io_write(&VI->H_WIDTH, 0); /**< Horizontal Width. */
-    cpu_io_write(&VI->TIMING, 0); /**< Timings. */
-    cpu_io_write(&VI->V_SYNC, 0); /**< Vertical Sync. */
-    cpu_io_write(&VI->H_SYNC, 0); /**< Horizontal Sync. (this one is particularly important for RD RAM init) */
-    cpu_io_write(&VI->H_SYNC_LEAP, 0); /**< Horizontal Sync Leap. */
-    cpu_io_write(&VI->V_LIMITS, 0); /**< Vertical Limits. */
-    cpu_io_write(&VI->COLOR_BURST, 0); /**< Color Burst. */
-    cpu_io_write(&VI->H_SCALE, 0); /**< Horizontal Scale. */
-    cpu_io_write(&VI->V_SCALE, 0); /**< Vertical Scale. */
+    // SC64SS: not for a ROM with libdragon's boot code. libdragon's display setup (the stable
+    // branch, and the preview branch before its VI rewrite) waits for a vblank when it finds
+    // the VI switched on, and with every timing zeroed that vblank never comes: FlappyBird
+    // stayed a blank screen. Those ROMs keep the three writes above (the behaviour every
+    // libdragon title was tested with); the rest get the full reset, which stops crashes in
+    // Ocarina of Time, with the VI switched off first, as it is at power-on: a libdragon ROM
+    // with Nintendo's boot code (the stable branch before it shipped its own) gets the full
+    // reset too, and with the VI off its display setup does not wait.
+    if (!libdragon) {
+        cpu_io_write(&VI->CR, 0); /**< Control Register. */
+        cpu_io_write(&VI->MADDR, 0); /**< Memory Address. */
+        cpu_io_write(&VI->H_WIDTH, 0); /**< Horizontal Width. */
+        cpu_io_write(&VI->TIMING, 0); /**< Timings. */
+        cpu_io_write(&VI->V_SYNC, 0); /**< Vertical Sync. */
+        cpu_io_write(&VI->H_SYNC, 0); /**< Horizontal Sync. (this one is particularly important for RD RAM init) */
+        cpu_io_write(&VI->H_SYNC_LEAP, 0); /**< Horizontal Sync Leap. */
+        cpu_io_write(&VI->V_LIMITS, 0); /**< Vertical Limits. */
+        cpu_io_write(&VI->COLOR_BURST, 0); /**< Color Burst. */
+        cpu_io_write(&VI->H_SCALE, 0); /**< Horizontal Scale. */
+        cpu_io_write(&VI->V_SCALE, 0); /**< Vertical Scale. */
+    }
 
     while (cpu_io_read(&SP->SR) & SP_SR_DMA_BUSY);
 
@@ -148,7 +228,20 @@ void boot (boot_params_t *params) {
         cpu_io_write(&ipl3_dst[i], io_read((uint32_t) (&ipl3_src[i])));
     }
 
-    bool cheats_installed = cheats_install(cic_type, params->cheat_list);
+    // SC64SS: a ROM with libdragon's IPL3 gets the engine through a stub on the cart
+    // (cheats.h): nothing parked in RAM survives that boot code, and its hand-off to the
+    // game runs from the cart, where the menu can point it at the stub.
+    uint32_t handoff = libdragon ? boot_libdragon_handoff(base) : 0;
+
+    // SC64SS: libdragon's boot code without the hand-off (a boot code newer than this finder
+    // knows): nothing is installed, the retail way would patch boot code that is not the
+    // retail one's, and the game runs as it always did (the menu keeps the routine out too)
+    bool cheats_installed = (libdragon && (handoff == 0)) ? false :
+        cheats_install(cic_type, params->cheat_list, params->hook_blob, params->hook_size, params->boot_patches, params->boot_patch_count, params->hook_borrowed, params->watch_reads, libdragon, params->hook_staging_pi, params->hook_monitor_pi, params->hook_lp_alt);
+
+    if (libdragon && (handoff != 0) && cheats_installed) {
+        boot_libdragon_stage(base, handoff);
+    }
 
     register uint32_t clear_rdram asm ("s1");
     register uint32_t skip_rdram_reset asm ("a0");
@@ -158,8 +251,13 @@ void boot (boot_params_t *params) {
     register uint32_t cic_seed asm ("s6");
     register uint32_t version asm ("s7");
 
-    clear_rdram = params->clear_rdram && !cheats_installed;
-    skip_rdram_reset = cheats_installed;
+    // SC64SS: the per-ROM "clear RDRAM" option keeps working with cheats or
+    // save states installed. The clear covers the lower 4 MiB only; the patcher
+    // and the engine's temporary copy sit at 0x80700000 and 0x80710000 and the
+    // hook is fetched from the cart afterwards, so nothing of ours is lost.
+    clear_rdram = params->clear_rdram;
+    // (a libdragon ROM's engine waits on the cart, so its RAM can be reset as usual)
+    skip_rdram_reset = cheats_installed && !libdragon;
     boot_device = (params->device_type & 0x01);
     tv_type = (params->tv_type & 0x03);
     reset_type = BOOT_RESET_TYPE_COLD;

@@ -6,6 +6,12 @@
 #ifndef MENU_VERSION
 #define MENU_VERSION "Unknown"
 #endif
+#ifndef SC64SS_RELEASE
+#define SC64SS_RELEASE "(development build)"   /* the save states release (the Makefile takes it from MENU_VERSION) */
+#endif
+#ifndef SC64SS_BASE
+#define SC64SS_BASE MENU_VERSION    /* the N64FlashcartMenu version it is built on */
+#endif
 
 #ifndef BUILD_TIMESTAMP
 #define BUILD_TIMESTAMP "Unknown"
@@ -108,9 +114,13 @@ static void draw (menu_t *menu, surface_t *d) {
         STL_DEFAULT,
         ALIGN_LEFT, VALIGN_TOP,
         "\n"
+        "Save states %s, a fork of N64FlashcartMenu %s\n"
+        "\tdeveloped by John Steinmeyer\n"
+        "\thttps://github.com/john-steinmeyer/sc64-savestates\n"
+        "\t(issues with save states go there, with this line)\n"
         "\n"
-        "%s",
-        information
+    "%s",
+    SC64SS_RELEASE, SC64SS_BASE, information
     );
 
     if (show_oss_lib_info_message) {

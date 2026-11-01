@@ -44,6 +44,10 @@ static void png_callback (png_err_t err, surface_t *decoded_image, void *callbac
     menu_t *menu = (menu_t *) (callback_data);
 
     image_loading = false;
+    if (image) {                    // SC64SS: the previous picture stayed up through the decode
+        surface_free(image);
+        free(image);
+    }
     image = decoded_image;
 
     if (err != PNG_OK) {
@@ -65,6 +69,58 @@ static void jpeg_callback (jpeg_err_t err, surface_t *decoded_image, void *callb
     }
 }
 
+// SC64SS: the decode of the browser's current entry (the view's init, and a move to a neighbour)
+static void image_start (menu_t *menu) {
+    show_message = false;
+    image_loading = true;
+    is_jpeg = file_has_extensions(menu->browser.entry->name, jpeg_extensions);
+    int max_w = display_get_width();
+    int max_h = display_get_height();
+
+    path_t *path = path_clone_push(menu->browser.directory, menu->browser.entry->name);
+
+    int err;
+    if (is_jpeg) {
+        err = jpeg_decoder_start(path_get(path), max_w, max_h, jpeg_callback, menu);
+    } else {
+        err = png_decoder_start(path_get(path), max_w, max_h, png_callback, menu);
+    }
+    if (err != (is_jpeg ? JPEG_OK : PNG_OK)) {
+        image_loading = false;
+        ui_components_background_reload();
+        menu_show_error(menu, convert_error_message(err, is_jpeg));
+    }
+
+    path_free(path);
+}
+
+// SC64SS: the next image in the folder in one direction (-1 back, +1 on), or -1 when there is none
+static int image_neighbour (menu_t *menu, int dir) {
+    for (int i = menu->browser.selected + dir; (i >= 0) && (i < menu->browser.entries); i += dir) {
+        if (menu->browser.list[i].type == ENTRY_TYPE_IMAGE) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+// SC64SS: L, R, C-Left, C-Right and the D-pad move to the previous or next image in the folder
+static void image_move (menu_t *menu, int dir) {
+    int i = image_neighbour(menu, dir);
+    if (i < 0) {
+        sound_play_effect(SFX_ERROR);
+        return;
+    }
+    if (image_loading) {
+        png_decoder_abort();
+        image_loading = false;
+    }
+    menu->browser.selected = i;
+    menu->browser.entry = &menu->browser.list[i];
+    sound_play_effect(SFX_CURSOR);
+    image_start(menu);
+}
+
 
 static void process (menu_t *menu) {
     if (menu->actions.back) {
@@ -83,6 +139,10 @@ static void process (menu_t *menu) {
             show_message = true;
         }
         sound_play_effect(SFX_ENTER);
+    } else if (!show_message && (menu->actions.go_left || menu->actions.lz_context)) {
+        image_move(menu, -1);
+    } else if (!show_message && (menu->actions.go_right || menu->actions.options)) {
+        image_move(menu, 1);
     }
 }
 
@@ -160,32 +220,13 @@ static void deinit (menu_t *menu) {
 
 
 void view_image_viewer_init (menu_t *menu) {
-    show_message = false;
-    image_loading = true;
     image_set_as_background = false;
     is_jpeg = file_has_extensions(menu->browser.entry->name, jpeg_extensions);
     image = NULL;
     // Free the background image temporarily so the PNG decoder has its full memory budget;
-    // ui_components_background_reload() restores it if the user does not set a new background
+    // ui_components_background_reload() restores it unless a new one is set
     ui_components_background_image_free_only();
-    int max_w = display_get_width();
-    int max_h = display_get_height();
-
-    path_t *path = path_clone_push(menu->browser.directory, menu->browser.entry->name);
-
-    int err;
-    if (is_jpeg) {
-        err = jpeg_decoder_start(path_get(path), max_w, max_h, jpeg_callback, menu);
-    } else {
-        err = png_decoder_start(path_get(path), max_w, max_h, png_callback, menu);
-    }
-    if (err != (is_jpeg ? JPEG_OK : PNG_OK)) {
-        image_loading = false;
-        ui_components_background_reload();
-        menu_show_error(menu, convert_error_message(err, is_jpeg));
-    }
-
-    path_free(path);
+    image_start(menu);
 }
 
 void view_image_viewer_display (menu_t *menu, surface_t *display) {

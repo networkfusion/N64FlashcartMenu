@@ -120,3 +120,6 @@ select **Set current directory as Grid library**. **Grid Cache** shows how many
 ROMs Grid has indexed; press `A` to delete the index, including the tile arrangement and view choices. Grid
 rebuilds it the next time it opens.
 See [Grid](34_grid.md) for controls, artwork, and indexing.
+### Reset Button
+
+What the console's RESET button does while a game runs. **Menu**, the default, goes back to the menu. **Restart game** starts the game you were playing again from its beginning, the way RESET does on a normal cartridge: the menu comes up for a moment and loads the game again, with its save states, virtual pak and hotkeys set up as at any launch, so it takes a few seconds (longer for the biggest games). Hold `START` while pressing RESET to go to the menu instead. It needs the save-state routine in the game, which is what notices RESET: Save States, the virtual pak or a screenshot button on for it. In any other game, and while the game is paused by the save-state panel, FreeCam or the frame step, RESET goes to the menu. **Exit to menu** on the save-state panel always goes to the menu, and a ROM set to autoload is started by RESET either way. Stored as `reset_restarts_rom` in `config.ini`.
