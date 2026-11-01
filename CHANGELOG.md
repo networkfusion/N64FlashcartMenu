@@ -1,3 +1,419 @@
+# Save states (SummerCart64 fork)
+
+## 0.3.4-ss2.0 (2026-09-29)
+
+- Save states for the 64 MiB games: Conker's Bad Fur Day, Resident Evil 2 and Pokemon
+  Stadium 2 (I tried the US versions). Their ROM fills the cartridge memory where the
+  routine, its tables and the states in use sit for every other game, so for these the
+  menu writes the routine and its tables into the SummerCart64's flash at launch, where it
+  puts the part of a bigger ROM past 64 MiB, and a save or a load streams the state between
+  the console and its file on the card while the game waits: about five seconds to save,
+  three to load. No virtual pak for them; none of the three uses a Controller Pak.
+- Pokemon Stadium 2 clears the start of memory early in its boot, where the routine's
+  entry sits. It gets a second layout, with the entry higher up and a routine on the
+  cartridge that puts the rest back; the menu applies it by itself, for every region's
+  version (the European one tried as well), and refuses Slow motion for the game. With
+  GameShark codes it boots with the codes alone: they need the placement the layout lacks.
+- Resident Evil 2 refuses Slow motion too: its cutscenes keep their data where the
+  resident routine sits.
+- A ROM hack over 64 MiB boots without save states: the part of such a ROM past 64 MiB
+  goes to the flash area the 64 MiB games' routine uses.
+- FreeCam in Conker's Bad Fur Day: the game draws with its own variant of the F3DEX2
+  display-list encoding and changes microcode partway through each frame, so the view
+  starts from the game's own record of the frame. Resident Evil 2 declines: its rooms are
+  pre-rendered pictures with the characters drawn over them.
+- A load puts back the sound chip's playback rate and its queue as the saved moment had
+  them (the 64 MiB games' states). The rate can't be read back from the chip, so the
+  routine times it for a few milliseconds as it steps in. Stadium 2 plays its battles at a
+  lower rate than its menus, and a battle loaded over a menu played too fast, with a gap
+  every frame.
+- Hotkeys in cutscenes that stream from the cartridge or read the controller only every
+  few frames (Conker's intro), in the 64 MiB games: the end of a cartridge transfer counts
+  as a moment for the routine, a hotkey stays armed when released until it fires, and a
+  held one is no longer taken as released between two reads.
+- A picture in the routine's room at the top of RAM: during a save, a load, the panel or a
+  screenshot the display goes to another of the game's own frame buffers, and back after
+  (Stadium 2's battle panel failed to open one time in three), and FreeCam draws such a
+  frame in two spare buffers of its own (Stadium 2 froze).
+- After a load, the short silence that keeps a game's sound driver ahead is queued even
+  when a long sound buffer was still playing at the check.
+- When FreeCam can't fly a moment it says NO FRAME TO FLY with Slow motion off too, at the
+  top of the picture.
+- The panel's Game page: the hint line moved below FREECAM HERE, which it half covered,
+  and Delete slot's hint reads DELETES THIS SAVE STATE.
+- Exit to menu brings the menu back in the console's own video mode. It took the game's,
+  so after a game from another region (a PAL game on an NTSC console, a US one on a PAL
+  console) the menu came up in the wrong one.
+- Favorites and history: up to 256 favorites and the last 50 games, one line a game with
+  a scroll bar, where each list held eight and a ninth favorite pushed one out. Z picks a
+  favorite up and carries it to another place; new favorites go to the end; R asks before
+  a game leaves either list; a ROM's R menu in the file list has Add to favorites. An
+  older menu keeps the first eight of each list if it saves the file.
+- Reset Button in the menu's settings: Menu, as before, or Restart game, where the
+  console's reset button starts the game that was running again through the menu, save
+  states and all. Start held on the way back up gives the menu; Exit to menu and a
+  suspend always do. The routine marks the reset (the console warns a game half a
+  second before it resets), so it works in games with Save States, the virtual pak or
+  a screenshot button on, and a power-on is never taken for one.
+- With a ROM set to autoload, Exit to menu reaches the menu; the autoload stays set for
+  power-on and the reset button.
+- A second bar under Loading ROM while a game's save-state files are checked, one by one
+  at every launch.
+- The state header: hook version 14, and 15 for the 64 MiB games, whose states carry the
+  sound chip's rate and queue (see state-format.md).
+- Compatibility: Pokemon Stadium 2 added, Conker's Bad Fur Day and Resident Evil 2 with
+  states now; 281 of the 299 games tried work.
+
+## 0.3.4-ss1.9 (2026-09-27)
+
+- FreeCam: C-right on a state in the panel loads it and opens a free camera on that
+  frozen moment instead of the game, and FreeCam here on the panel's Game page does the
+  same on the live game. The stick looks around, the C buttons and the D-pad move, L is
+  fast and Z slow, R held with the stick zooms (forward, back) and rolls (sideways), R
+  tapped pushes the far plane out, D-left hides the HUD layer, D-right the fog, A resets
+  everything (with R held, the lens only), Start takes a screenshot of the view and B
+  puts the state back so the game carries on from it. The game's own frame is drawn
+  again by the console with the camera moved, for any game on the two common
+  display-list encodings; a moment that cannot be redrawn (a 2D screen, a game with
+  its own rendering microcode, a frame in several pieces, a frame that is not the one
+  on screen) says so and loads as usual. The panel's footer names the key CAM.
+- A load left the sound faintly stuttering for good in GoldenEye 007 and, less often,
+  in other games: the game's audio driver found the audio interface idle at its first
+  check after the resume and settled into queueing each buffer only after the previous
+  one ended, a gap of a fraction of a millisecond every frame. The load now leaves a
+  short silence playing (from a stretch of the game's own memory that holds zeros), so
+  the driver finds the interface busy and keeps its lead. Every existing state gets
+  this; nothing in the state format changed.
+- The menu's image viewer and the file browser's preview show a screenshot in a fraction
+  of a second. They decoded one row a frame: four seconds for a 320x240 picture, eight for
+  a 640x480 one, a bare progress bar meanwhile. The viewer also keeps the previous picture up
+  until the next one is ready.
+
+## 0.3.4-ss1.8 (2026-09-22)
+
+- The list of save-state slots grows. It lives on the card, one file per slot with no
+  fixed count, and the cartridge's own slots (by ROM size, as before) hold the states
+  in use: a save goes to the cartridge and to the card right after, a load of a state
+  not in the cartridge reads it from the card first, about a second, and the state
+  used longest ago makes room. Every launch keeps six empty slots beyond the last one
+  used (Empty slots to keep in the Save States options: 6, 12, 24 or 48), gives back
+  empty ones past that, and re-makes any file that is missing. The panel scrolls,
+  eight rows at a time (C-up and C-down page), fetches the thumbnail of a state on the
+  card, asks before the last empty slot is used and says when none is left, and the
+  Game page has Delete slot. Today's files are the first slots, untouched; nothing
+  changes until a game saves past the old count. Asked for by Acurrz.
+- A state saved with Slow motion on is refused with a message when it is asked for with
+  the option off, and the panel marks such states SLOW. Loaded that way, a state saved
+  while the game was busy froze it; with the option on it loads as before. Found while
+  testing the slots on Banjo-Kazooie.
+- Set ROM to autoload saves the game whose page is open. It saved the file browser's
+  folder and highlighted entry, a different file when the page was opened from the
+  History or Favorites tab, and the next start stopped at "Couldn't open ROM file".
+  1.4 to 1.7 stored the game's own folder and name instead, but for a game in the
+  card's root folder opened from History or Favorites that left the prefix alone,
+  and the next boot looked for `sd:/sd:/<name>`. Every case now.
+- After a game was set to autoload, other games' pages opened in the same session
+  showed and booted the autoload game, and after a failed autoload the next page
+  opened would have crashed: the page kept the earlier game's path, or none. Fixed
+  the way rmmh's upstream pull request does.
+- Holding Start while the menu starts, to cancel autoload, then setting a game in the
+  same session freed a string that was never allocated. No harm seen; fixed.
+- A box confirms Set ROM to autoload, with the file name and how to get the menu
+  back (Start held while the console is switched on). Nothing showed before.
+
+## 0.3.4-ss1.7 (2026-09-19)
+
+- A hotkey can be set for every game at once, the screenshot button included. On a
+  game's Hotkeys and Screenshot page, after the hold, A keeps the buttons for this game
+  and Z gives them to every game: the ones given their own earlier included, and games
+  added later. A game's own set afterwards still wins for it. The menu's Save State
+  Hotkeys page sets the same every-game buttons and has the screenshot button now. The
+  frame step button may share buttons with the hotkeys, as before, but not with the
+  screenshot button, which fires at Step speed too. Asked for by DEFAULTDNB.
+- A game's options menu stays open after a setting, back at its top row, and comes back
+  after the Hotkeys and Screenshot and Manage saves pages, for the next change.
+- The Virtual Controller Paks view no longer crashes on a real pak holding a note whose
+  name or extension has a byte outside the pak's character set. The menu showed its
+  assertion screen ("cannot convert invalid N64CP char") the moment the view opened:
+  the view handed the raw bytes to libdragon's path formatter, which refuses such a
+  byte, where libdragon itself replaces them when it reads a pak. The set has codes for
+  space, digits, capitals, a few marks and katakana; a game or a tool had written
+  something else into that note. The byte shows as `?` now and the note copies as it
+  is. Reported by Tom Scro, with the dump that named it.
+- A controller whose Controller Pak cannot come out, such as a Nintendo Switch Online
+  N64 controller through a BlueRetro adapter, presents a pak the launch refuses in the
+  virtual pak's port. The notes now say its Rumble Pak mode is the way around, which is
+  how Tom got past it.
+- A virtual pak file of the wrong size is left alone. A file copied into
+  `sd:/savestates/paks` that is not a plain 32 KiB image (a multi-bank image, a DexDrive
+  dump with its header) was replaced by a fresh pak at the next launch; now the launch
+  stops and says what it found, and only an empty file, from a power cut while it was
+  made, is remade.
+- The notes say when a game's pak writes reach the card (about a second and a half
+  after the last one, the LED blinking) and that the console must stay on for that.
+
+## 0.3.4-ss1.6 (2026-09-19)
+
+- The vertical jitter with the virtual pak on is fixed: Tony Hawk's Pro Skater 3 at its
+  boot and in its menus, Perfect Dark at its logos, in their high-resolution modes.
+  With Slow motion off the routine runs from the cartridge, slowly, and three things
+  it did around a pak transaction held the console's interrupts too long there, so the
+  game's video interrupt came up to 3 ms late, past the vertical blank of a high-
+  resolution mode: a walk over the memory after the game's controller block, looking
+  for buttons that were not there; the checksum of every pak read, computed a byte at
+  a time; and a wait for the game's own cartridge transfer to end before the read could
+  be answered. The walk is gone, the checksums come from a table the menu prepares
+  when it loads the pak, and the wait is a hand-off: the transfer's end brings the
+  read back. A pak presence check, which some games make a hundred times a second, is
+  answered without the rest of the machinery. Reads are cheap now, so the logos and the
+  menus hold still. A write to the pak still costs the routine about a millisecond from
+  the cartridge, so a game that writes to its pak as it starts keeps a mild jitter for a
+  second or two there and nowhere else: THPS3 tests the pak with fifty writes at its
+  legal screens, Perfect Dark touches its save at its logos. With the virtual pak off
+  for the game that goes too. THPS3 adds one late frame of its own at its pak check, by
+  switching interrupts off there.
+- Tony Hawk's Pro Skater 3 refuses Slow motion, as the other games that use all of the
+  Expansion Pak do: its high-resolution mode did not boot with it on.
+
+## 0.3.4-ss1.5 (2026-09-19)
+
+- The freeze after a load is fixed. Since 1.2 a state could be saved while the RDP was
+  still finishing the frame: the test that picks the save moment had stopped counting
+  the RDP's pipe flag, a change made for libdragon homebrew, whose frames never clear
+  it, but applied to every game. In such a state the frame's final interrupt was still
+  owed to the game, and a load never delivered it, so the game waited forever: Wave
+  Race 64 on about one load in three, Banjo-Kazooie on one in five. The flag counts
+  again for games that clear it, so the moment comes once the frame is done, as in
+  1.1; libdragon games are unchanged. States saved by 1.2 to 1.4 at such a moment load
+  as well: the load runs the frame's closing command itself and the interrupt arrives.
+  The files do not change; hook version 13 marks the states written with the new rule.
+- The Menu information screen (Start, then Menu information) opens with the save
+  states release, this repository and the base menu's version, so a report can quote
+  the line; the build timestamp below it pins the build.
+
+## 0.3.4-ss1.4 (2026-09-18)
+
+- ROM autoload is back. In a ROM's information screen, R, then "Set ROM to autoload",
+  and the console boots straight into that game from then on, with the routine armed
+  as on any launch. Hold Start while switching the console on to get the menu back;
+  that switches autoload off as well. Upstream dropped it in 0.3.0 for Fast Reboot and
+  has brought it back on its develop branch, and this build follows: the Fast Reboot
+  setting is gone with it, as there.
+- Banjo-Kazooie booted with a black sky and a thin strip of ground in 1.2 and 1.3,
+  with Save States on and Slow motion off. Since 1.2 the routine kept a counter on a
+  word in low memory that the game's copy protection checks against its boot code,
+  and a wrong word there makes the game sabotage its own perspective setup. The
+  counter lives elsewhere now. With Slow motion on the routine is placed differently
+  and the game was fine, which is how it went unnoticed here. Reported by Acurrz.
+- The video reset before a game boots switches the VI off as well, the state it is in
+  at power-on, for every ROM that gets the reset. libdragon homebrew built on the
+  stable branch before it shipped its own boot code carries Nintendo's, so 1.3 gave
+  it the full reset and its display setup waited forever for a vblank. With the VI
+  off it does not wait.
+- Known, not fixed here: a load can freeze the game when its state was saved while
+  the RDP was still finishing a frame, which a load cannot reproduce. Wave Race 64
+  hits it most, about one save in three in its attract demo in testing, Banjo-Kazooie
+  once in five, Super Mario 64 never. The cause is understood; the fix, a better
+  choice of the save moment, needs the full survey behind it and comes next.
+
+## 0.3.4-ss1.3 (2026-09-18)
+
+- Built on N64FlashcartMenu 0.3.4. Its one change resets the video registers
+  before a game boots, which fixed crashes in Ocarina of Time upstream. A ROM
+  built with libdragon skips that reset: libdragon's display setup waits for a
+  vblank when it finds the VI switched on (the stable branch since August 2023,
+  the preview branch until April 2025), and with every timing zeroed that vblank
+  never comes, so FlappyBird stayed on a blank screen. Newer preview builds cope.
+  A ROM with Nintendo's boot code still got the full reset, so a stable-branch
+  build from before October 2024 stayed blank; 1.4 covers those.
+- Saves move between a game's virtual Controller Pak and a real one from the
+  menu: single notes either way, or whole paks, from any port. Start in the
+  browser, Virtual Controller Paks, or a game's options, Virtual Controller Pak,
+  Manage saves. The real pak's contents are backed up to `sd:/cpak_saves` before
+  it is first changed. Asked for by Tom Scro on Discord.
+- The Virtual Controller Pak's port list shows what is plugged into each port,
+  live, and refuses a port holding a real Controller Pak; a launch with one in the
+  virtual pak's port is refused as well, since the game's writes would land in the
+  real pak too. With 1.2 that launch went ahead: a pak game played with the
+  virtual pak on port 1 and a real Controller Pak in port 1 could leave its writes
+  in the real pak. A Rumble Pak there is noted and allowed: the panel can pull the
+  virtual pak out when the game wants the rumble.
+- The screenshot button could kill the game's sound, or the game, when its tap fell
+  on the instant a cartridge read of the game's own had just finished: the copy of
+  the picture swallowed that completion, and whatever waited for it waited for
+  good. A few quick taps in a row found that instant before long. A screenshot is
+  taken at the same kind of moment as a save now.
+- AeroGauge, BattleTanx, BattleTanx: Global Assault and Cruis'n World work; the
+  compatibility list said otherwise. 280 of 298 now.
+
+## 0.3.3-ss1.2 (2026-09-17)
+
+- The slot panel opens with R + Z + Start now. L + R + Start never worked on an
+  original controller, which takes it as the stick reset and drops the Start.
+  Reported, with the fix, by drumstix576. The hotkeys page refuses that combo.
+- Hotkeys can be changed: in the menu settings for every game, or per game in the
+  ROM's options under "Hotkeys and Screenshot". One button or more each. The game
+  doesn't see the buttons while a hotkey is held.
+- Screenshot button, set per game. A tap writes the screen to
+  `sd:/screenshots/<game>/` as a PNG named with the cartridge clock's time. The
+  game never sees the button. Hundreds fit per launch; they wait in one file that
+  the menu sorts out on its next start.
+- The virtual Controller Pak's port is a setting: Port 1 to 4, or Off. On the
+  panel's Game page the pak can be pulled out and put back in any port while the
+  game runs, and the game is told about it the way the console reports a real
+  swap. Beetle Adventure Racing can use a Controller Pak to save and a Rumble Pak
+  to race; Perfect Dark takes a Rumble Pak in port 1 with the pak in port 2.
+- Save states for homebrew built with libdragon. Tested on about forty ROMs,
+  including nineteen of the N64brew Game Jam 2025 entries and most of the SDK
+  examples. A ROM with libdragon's pre-2023 entry code, or a boot code the menu
+  doesn't know, runs without the routine.
+- Frame step: one press lets exactly one frame through, holding the button steps
+  ten times a second. L by default. A 30 fps game used to need two presses.
+- Slow motion is refused for Donkey Kong 64, Perfect Dark, Indiana Jones and Rush
+  2049. They use all of the Expansion Pak, so they never booted with it on. They
+  always launch on the cartridge engine now, whatever their ini says.
+- Left and right switch the panel's pages, same as L and R.
+- Image viewer: L, R, C-Left, C-Right and the D-pad step through the folder, the
+  file browser previews the highlighted image, and a background image is scaled
+  to fill the screen.
+- Fixed: a tap of a hotkey's own button showed the game L and R released and
+  pressed again. Mario 64 took it for a camera press.
+- Fixed: in 480-line modes the panel and the on-screen text drew a line past the
+  end of the frame buffer. A 640x480 game crashed on leaving the panel under slow
+  motion.
+- Fixed: games that mask an interrupt and poll it instead (libdragon leaves the
+  cartridge's pending) blocked every save, load and panel request. Clean moments
+  now count only the interrupts the game has enabled, and a request that finds
+  none times out instead of holding up later hotkeys.
+- Fixed: the RDP's pipe-busy flag blocked saves in games that never send a full
+  sync. The routine waits for the command and DMA units only.
+- Fixed: after a save, load or panel visit the game resumes on its vblank. The
+  first frame after a resume used to show a field late.
+- Fixed: with Slow motion on, a state saved with it off could not be read back from
+  the card after a power cycle: the panel showed the slot empty and a suspended game
+  did not resume. It loads now, as it always did while still in cartridge memory.
+- The controller is also read every frame, for games whose controller transfers
+  don't raise an exception the routine sees.
+- libdragon details: a state carries the RSP's scalar registers (header version
+  11); a game whose RSP is busy at every frame is held at the frame boundary until
+  its queue runs dry (header version 12); after a load the RDP is put back where
+  the saved list left it (BotBoy!64 crashed seconds after every load); debug
+  builds that log over USB get their card copies written while the game is held;
+  a ROM without a checksum in its header gets one computed from its contents, for
+  the state and pak file names.
+
+## 0.3.3-ss1.1 (2026-09-14)
+
+- **Nothing resident any more.** The routine now lives on the cartridge: a gate of a
+  few dozen instructions in the exception-vector page and a 16 KiB monitor in the
+  cartridge memory, run in place. A save or a load borrows the top 128 KiB of RAM
+  for its length and puts the game's bytes back, so games that use every byte of the
+  Expansion Pak work (Donkey Kong 64, Perfect Dark, Indiana Jones and the Infernal
+  Machine, Rush 2049). The "Hook Placement" option of the interim builds is gone;
+  the resident routine of the first release comes back only through the Slow motion
+  option below.
+- The **virtual Controller Pak** is answered by the monitor from the cartridge memory.
+  It is on by default for the games the menu's database marks as Controller Pak users
+  and off for the rest (a Rumble Pak in port 1 then works as usual); the per-ROM option
+  switches it either way. It answers as a Controller Pak does (the Rumble Pak's
+  detection area reads as zeros), and a transaction is served once, at the interrupt
+  that brings the PIF's answer, not twice; the four games that ran only with the pak
+  off in the sweep (Wetrix, Razor Freestyle Scooter, NASCAR 99, WCW Nitro) run with it
+  on now.
+- States hold all 8 MiB of RAM plus the RSP's memories and program counter (hook
+  v10; files are 16 KiB longer, and files from ss1.0 are made afresh at the game's
+  first boot). The game's clock is carried across a freeze; the displayed frame is
+  restored last on a load. The card mirror of a state includes the RSP's memories, so
+  a state loaded after a power cycle gets them from the card.
+- USB: the menu's file push (`send-file`) answers `push ok <bytes>` once the file is
+  closed on the card, and reads the whole payload into RAM before writing it (a slow
+  card write between two pieces of a payload made the cartridge drop the rest and the
+  menu wait for it for ever). A tool that pushes a file must wait for that line before
+  it powers the console off: the directory entry is written last, and a cut before it
+  leaves a 0-byte file, which the cart's bootloader "loads" without complaint and then
+  boots whatever the cartridge memory holds.
+- Boot fixes: games that unpack their code at boot (Mario Tennis, Excitebike 64)
+  get the watchpoint patch applied after the unpacking; the boot-time RDP kick no
+  longer leaves the RDP busy (Wave Race 64, Rayman 2 loads); hi-res titles get a
+  shorter panel instead of none.
+- **Slow motion** is a per-game option now (off by default): on, the routine stays
+  resident in the top 128 KiB of RAM as in the first release, and the panel's Game page
+  offers slow motion and frame step. Both placements share one slot layout, so the
+  option switches without losing states (a state saved with it on holds 7.75 MiB and
+  loads either way); games that use all of the Expansion Pak do not boot with it on.
+- GameShark codes keep the engine at its classic place at the top of RAM (as in the
+  stock menu); states and the pak ride along with it there.
+- The Slow motion option is remembered when switched on, and the Virtual Controller Pak
+  when switched off for a game the database marks as a pak user (both used to fall
+  back to their defaults at the next visit: the settings writer dropped the key).
+- Suspend's resume is armed like a held combo, so the routine is entered on a frame
+  with the RCP idle, and a try that finds no such frame is repeated every three
+  seconds for half a minute. It used to start on whatever frame the timer fell on and
+  give up after one try, which on a busy boot (Super Mario 64's logo) meant no resume
+  at all; the development build's own timing hid it.
+- A built-in list of titles the menu treats specially, by game code, with nothing to
+  set. Since 12 September the engine's watchpoint on the exception vector has covered
+  reads as well as writes (Indiana Jones copies the vector's words and chains to the
+  copy); Rare's boot does not survive it (the engine's handling of libultra's vector
+  write goes wrong there, in a way not yet understood), so Banjo-Kazooie and GoldenEye
+  007 boot with the watchpoint on writes only, as in the first release (`watch_reads=0`
+  in a ROM's ini does the same for any other title). GoldenEye 007 also gets the
+  cartridge routine with its ten scratch words moved from 0x010 to 0x2A8 in the
+  exception page: the game keeps its own TLB refill handler in the first 128 bytes of
+  that page, where the routine parks registers on every entry, and died at boot with
+  them over it. The virtual pak's stub would land there too, so it gets no virtual pak
+  (it has no Controller Pak use).
+- Known: Ocarina of Time probes port 1 for a Rumble Pak every few frames when any pak
+  answers and slows to a crawl with the virtual pak on; it is off for it by default (the
+  game has no Controller Pak use). Games that unpack their code at boot need a per-title
+  entry (three known without one).
+
+Tested on hardware from the PC: 298 games launched with save states and the virtual pak on, a save, a load and a look at the picture and the frame rate; 276 work. Not working: AeroGauge, All-Star Baseball 2000, All-Star Baseball 2001, All-Star Baseball 99, BattleTanx, BattleTanx: Global Assault, Cruis'n World, Jeremy McGrath Supercross 2000, Madden NFL 2002, Ms. Pac-Man: Maze Madness, NBA Jam 2000, NBA Jam 99, NFL QB Club 2001, NFL Quarterback Club 2000, NFL Quarterback Club 2001, NFL Quarterback Club 98, NFL Quarterback Club 99, NHL Breakaway 98, Power Rangers: Lightspeed Rescue, South Park: Chef's Luv Shack, WCW Backstage Assault, WCW Mayhem. Working only with the virtual pak switched off: Indiana Jones and the Infernal Machine.
+
+## 0.3.3-ss1.0 (2026-09-06)
+
+Based on N64FlashcartMenu V0.3.3.
+
+- Save states on N64 hardware, no PC: L + R + D-pad Up saves, L + R + D-pad Down
+  loads, L + R + Start opens a slot panel with time stamps and thumbnails. See
+  `docs/savestates.md`.
+- State files are format v2: header first, checksummed, the image length stated
+  in the header, written in a torn-safe order to the card (`docs/state-format.md`).
+  Later builds will keep reading them.
+- Slow motion and frame step from the panel's Game page (L or R): 1/2, 1/4, 1/8 or
+  Step (Z advances one frame), with the sound slowed to match (pitch down) or left
+  to stutter.
+- **Exit to menu** and **Suspend** on the panel's Game page: back to the SC64 menu
+  without the reset button, with everything pending written to the card first;
+  Suspend saves the slot with a resume mark and the next launch of the game loads
+  it by itself.
+- A per-ROM **Virtual Controller Pak**: the game sees a Controller Pak in port 1,
+  answered from a 32 KiB image and saved to `sd:/savestates/paks/`. The answers are
+  given from inside the game's own interrupt handler (four instructions of
+  libultra's SI acknowledge are patched at boot), which is what makes every
+  transfer land; games with another handler get a best-effort answer at the
+  interrupt.
+- A per-ROM **Save States** option in the ROM's options menu, stored as
+  `savestates_enabled` in the ROM's `.ini`, independent of **Use Cheats**.
+- States live in the cartridge memory above the ROM (7 slots for ROMs up to 8 MiB,
+  6 up to 16 MiB, 4 for 32 MiB, 3 for 40 MiB) and are mirrored to
+  `sd:/savestates/` so they survive power cycles.
+- Boot integration for the resident hook: engine placement in the exception-vector
+  page with a reinstall stub for games that clear RAM at boot, a boot patch for
+  games that disarm the engine's watchpoint (libultra 2.0K+), `osMemSize` set for
+  Expansion Pak games, and the cheat engine kept working alongside.
+- Fixes found on the way: the 6101 IPL3 patch offset (Star Fox 64 booted without
+  the engine), the `I_J` macro's unparenthesised argument, `.datel` code files
+  loaded at boot without a visit to the code editor, and "Clear RDRAM on boot"
+  honoured with cheats installed.
+
+Tested: Super Mario 64, Mario Kart 64, Star Fox 64, F-Zero X, Ocarina of Time,
+Super Smash Bros., GoldenEye 007, Banjo-Kazooie, Banjo-Tooie, Diddy Kong Racing,
+Kirby 64, Yoshi's Story, Mario Party, Wave Race 64, Paper Mario, Pokémon Stadium,
+Turok 2. Not working: Donkey Kong 64, Perfect Dark (they use all of the Expansion
+Pak).
+
+---
 # Release Notes
 
 - For the SummerCart64, use the `sc64menu.n64` file in the root of your SD card.
@@ -46,6 +462,33 @@
 
 ### Current known Issues
 - Rebooting a 64DD disk once will result in a blank screen. Twice will return to menu.
+- PixelFX HDMI mods may need to be updated to latest FW to support display.
+
+### Deprecation notices
+- None.
+
+## Release Notes 2026-09-12 - Tagged 0.3.4
+
+- **New Features**
+	- ~~Browser now allows hiding files and folders with hidden attributes set (thanks [Xeroxxx](https://github.com/Xeroxxx)).~~ Awaiting performance enhancement.
+
+- **Bug Fixes**
+	- Fix potential crashes in Zelda OOT, The boot function now resets the VI (mainly H-Sync) registers to fix the issue.
+
+- **Documentation**
+
+- **Refactor**
+
+- **Other**
+
+### Breaking changes
+- None.
+
+### Notes
+- None.
+
+### Current known Issues
+- Fast Rebooting a 64DD disk once will result in a blank screen. Twice will return to menu. This is expected until disk swapping is fully implemented.
 - PixelFX HDMI mods may need to be updated to latest FW to support display.
 
 ### Deprecation notices

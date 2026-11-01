@@ -52,6 +52,12 @@ static void menu_init (boot_params_t *boot_params) {
     assert(menu != NULL);
 
     menu->boot_params = boot_params;
+    menu->boot_params->hook_blob = NULL;
+    menu->boot_params->hook_size = 0;
+    menu->boot_params->hook_borrowed = false;
+    menu->boot_params->watch_reads = true;
+    menu->boot_params->boot_patches = NULL;
+    menu->boot_params->boot_patch_count = 0;
 
     menu->mode = MENU_MODE_NONE;
     menu->next_mode = MENU_MODE_STARTUP;
@@ -65,6 +71,27 @@ static void menu_init (boot_params_t *boot_params) {
     // where it matters. Checking before anything large is allocated also stops
     // libdragon warning that the ROM requires one.
     debugf("Expansion Pak: %s\n", is_memory_expanded() ? "installed" : "not installed");
+
+    // SC64SS: post-mortem. The first kilobyte of RDRAM survives a reset (the IPL3s
+    // clear everything above it), so the vector page a hung game left behind is
+    // copied into the cart buffer at +0x1400, where a PC can read it over USB.
+    if (menu->flashcart_err == FLASHCART_OK) {
+        static uint32_t sc64ss_lowpage[0x100] __attribute__((aligned(16)));
+        for (uint32_t i = 0; i < 0x100; i++) {
+            sc64ss_lowpage[i] = *(volatile uint32_t *)(0xA0000000UL + 4 * i);
+        }
+        data_cache_hit_writeback(sc64ss_lowpage, sizeof(sc64ss_lowpage));
+        dma_write(sc64ss_lowpage, 0x1FFE1400UL, sizeof(sc64ss_lowpage));
+        // SC64SS: the routine's Exit to menu (and a suspend) leaves 'EXIT' at +0x1EF8 as its last
+        // act: this start was asked for, not the reset button's (both come as warm starts)
+        menu->exit_start = (io_read(0x1FFE1EF8UL) == 0x45584954UL);
+        io_write(0x1FFE1EF8UL, 0);
+        // SC64SS: and 'RSET' at +0x1EFC when the reset button was pressed in a game with the
+        // routine (it watches for the console's pre-reset interrupt): the reset type the menu is
+        // booted with is warm after a power-on as well, so it can't tell the two apart
+        menu->reset_start = (io_read(0x1FFE1EFCUL) == 0x52534554UL);
+        io_write(0x1FFE1EFCUL, 0);
+    }
 
     joypad_init();
     timer_init();
@@ -89,6 +116,7 @@ static void menu_init (boot_params_t *boot_params) {
     settings_load(&menu->settings);
     theme_set_by_name(menu->settings.theme);
     path_pop(path);
+    sc64ss_shots_finish(menu->storage_prefix);   // SC64SS: screenshots taken in the last game, to its folder
 
     path_push(path, MENU_ROM_LOAD_HISTORY_FILE);
     bookkeeping_init(path_get(path));
@@ -223,7 +251,9 @@ static view_t menu_views[] = {
     { MENU_MODE_FAVORITE, view_favorite_init, view_favorite_display },
     { MENU_MODE_HISTORY, view_history_init, view_history_display },
     { MENU_MODE_DATEL_CODE_EDITOR, view_datel_code_editor_init, view_datel_code_editor_display },
-    { MENU_MODE_EXTRACT_FILE, view_extract_file_init, view_extract_file_display }
+    { MENU_MODE_EXTRACT_FILE, view_extract_file_init, view_extract_file_display },
+    { MENU_MODE_HOTKEYS, view_hotkeys_init, view_hotkeys_display },
+    { MENU_MODE_VIRTUAL_PAK, view_virtual_pak_init, view_virtual_pak_display },
 };
 
 /**

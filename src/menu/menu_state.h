@@ -44,7 +44,9 @@ typedef enum {
     MENU_MODE_FAVORITE,
     MENU_MODE_HISTORY,
     MENU_MODE_DATEL_CODE_EDITOR,
-    MENU_MODE_EXTRACT_FILE
+    MENU_MODE_EXTRACT_FILE,
+    MENU_MODE_HOTKEYS,          /**< SC64SS: the save state hotkeys */
+    MENU_MODE_VIRTUAL_PAK,      /**< SC64SS: the virtual Controller Paks, and copies to and from a real one */
 } menu_mode_t;
 
 /** @brief File entry type enumeration */
@@ -113,6 +115,7 @@ typedef struct {
         bool options;
         bool settings;
         bool context;
+        bool lz_context;
         bool tab_left;
         bool tab_right;
     } actions;
@@ -147,6 +150,14 @@ typedef struct {
         bool emulator_file;
         bool extract_file;
     } load_pending;
+
+    bool hotkeys_for_rom;       /**< SC64SS: the hotkeys view edits the loaded ROM's own (else the menu's) */
+    bool exit_start;            /**< SC64SS: this start was asked for by the routine (Exit to menu, a suspend), not the reset button */
+    bool reset_start;           /**< SC64SS: the routine saw the reset button pressed before this start */
+    struct {
+        int64_t check_code;     /**< SC64SS: the game whose pak the virtual paks view opens on (0: the list of every pak) */
+        bool from_rom;          /**< SC64SS: opened from the game's options, so back returns there */
+    } vpak_view;
 } menu_t;
 
 

@@ -8,6 +8,8 @@
 
 #include "../cart_load.h"
 #include "../fonts.h"
+#include "../png_decoder.h"
+#include "../ui_components/constants.h"
 #include "../zip_entry_count.h"
 #include "utils/fs.h"
 #include "views.h"
@@ -32,6 +34,152 @@ static const char *rom_meta_extensions[] = { "meta", "metadata", NULL };
 static bool archive_entry_limit_exceeded = false;
 static bool archive_entry_precheck_failed = false;
 static bool directory_entry_limit_exceeded = false;
+
+// SC64SS: a preview of the highlighted image, decoded in the background once the cursor has
+// rested on it for a moment and drawn beside the list (which draws narrower meanwhile): a
+// folder of screenshots can be looked through without opening each one.
+#define PREVIEW_W       256
+#define PREVIEW_H       192
+#define PREVIEW_X1      (LIST_SCROLLBAR_X - 8)
+#define PREVIEW_X0      (PREVIEW_X1 - PREVIEW_W)
+#define PREVIEW_Y0      ((VISIBLE_AREA_Y0 + TAB_HEIGHT + LAYOUT_ACTIONS_SEPARATOR_Y) / 2 - PREVIEW_H / 2)
+#define PREVIEW_Y1      (PREVIEW_Y0 + PREVIEW_H)
+#define PREVIEW_LIST_W  (PREVIEW_X0 - 8 - VISIBLE_AREA_X0)
+
+#define PREVIEW_CACHE   6                 // recent decodes kept: scrolling back over them is instant
+
+static surface_t *preview_image = NULL;   // the one drawn: a cache entry's surface, or none
+static int preview_shown = -1;            // the entry it belongs to
+static int preview_index = -1;            // the entry whose decode is in flight (-1: none)
+static bool preview_loading = false;
+static bool preview_slot = false;         // the highlighted entry is an image: the list leaves the room
+static int preview_rest_index = -1;       // the entry the cursor rests on ...
+static int preview_rest = 0;              // ... and for how many frames
+static int preview_failed = -1;           // an entry whose decode failed: not tried again
+static struct { int index; surface_t *img; } preview_cache[PREVIEW_CACHE];
+static int preview_cache_next = 0;        // the slot the next decode replaces (the oldest)
+
+static void preview_abort (void) {
+    if (preview_loading) {
+        png_decoder_abort();
+        preview_loading = false;
+    }
+    preview_index = -1;
+}
+
+// everything goes: the entries change under it, or the view ends (the decoder and the memory
+// are the image viewer's then)
+static void preview_drop (void) {
+    preview_abort();
+    for (int i = 0; i < PREVIEW_CACHE; i++) {
+        if (preview_cache[i].img) {
+            surface_free(preview_cache[i].img);
+            free(preview_cache[i].img);
+            preview_cache[i].img = NULL;
+        }
+        preview_cache[i].index = -1;
+    }
+    preview_cache_next = 0;
+    preview_image = NULL;
+    preview_shown = -1;
+    preview_failed = -1;
+}
+
+static surface_t *preview_cached (int index) {
+    for (int i = 0; i < PREVIEW_CACHE; i++) {
+        if (preview_cache[i].img && (preview_cache[i].index == index)) {
+            return preview_cache[i].img;
+        }
+    }
+    return NULL;
+}
+
+static void preview_callback (png_err_t err, surface_t *decoded_image, void *callback_data) {
+    (void) callback_data;
+    preview_loading = false;
+    if ((err != PNG_OK) || !decoded_image) {   // no preview for this entry; the one up is another's, so down it goes
+        preview_failed = preview_index;
+        preview_index = -1;
+        preview_image = NULL;
+        preview_shown = -1;
+        return;
+    }
+    int k = preview_cache_next;
+    preview_cache_next = (preview_cache_next + 1) % PREVIEW_CACHE;
+    if (preview_cache[k].img) {
+        surface_free(preview_cache[k].img);
+        free(preview_cache[k].img);
+    }
+    preview_cache[k].index = preview_index;
+    preview_cache[k].img = decoded_image;
+    preview_image = decoded_image;
+    preview_shown = preview_index;
+    preview_index = -1;
+}
+
+static void preview_follow (menu_t *menu) {
+    entry_t *e = menu->browser.entry;
+    int want = (menu->browser.valid && !menu->browser.archive && e && (e->type == ENTRY_TYPE_IMAGE)) ? menu->browser.selected : -1;
+    preview_slot = (want >= 0);
+    if (want < 0) {
+        preview_abort();
+        preview_image = NULL;
+        preview_shown = -1;
+        preview_rest = 0;
+        return;
+    }
+    if (preview_shown == want) {
+        if (preview_loading && (preview_index != want)) {
+            preview_abort();            // (a decode for an entry the cursor left)
+        }
+        return;
+    }
+    surface_t *cached = preview_cached(want);
+    if (cached) {
+        preview_abort();
+        preview_image = cached;
+        preview_shown = want;
+        return;
+    }
+    if (preview_loading && (preview_index == want)) {
+        return;                         // in flight: the last thumbnail stays up meanwhile
+    }
+    if (want == preview_failed) {
+        preview_image = NULL;
+        preview_shown = -1;
+        return;
+    }
+    if (preview_rest_index != want) {
+        preview_rest_index = want;
+        preview_rest = 0;
+    }
+    if (++preview_rest < 3) {
+        return;                         // the cursor has to rest a moment (a fast scroll)
+    }
+    preview_abort();                    // whatever else was in flight
+    path_t *path = path_clone_push(menu->browser.directory, e->name);
+    preview_index = want;
+    preview_loading = true;
+    if (png_decoder_start(path_get(path), PREVIEW_W, PREVIEW_H, preview_callback, menu) != PNG_OK) {
+        preview_loading = false;        // busy or out of memory: none for this one, this time
+        preview_index = -1;
+    }
+    path_free(path);
+}
+
+static void preview_draw (void) {
+    if (!preview_slot) {
+        return;
+    }
+    ui_components_box_draw(PREVIEW_X0 - 2, PREVIEW_Y0 - 2, PREVIEW_X1 + 2, PREVIEW_Y1 + 2, RGBA32(0x00, 0x00, 0x00, 0xC0));
+    ui_components_border_draw(PREVIEW_X0 - 2, PREVIEW_Y0 - 2, PREVIEW_X1 + 2, PREVIEW_Y1 + 2);
+    if (preview_image) {
+        int x = PREVIEW_X0 + (PREVIEW_W - preview_image->width) / 2;
+        int y = PREVIEW_Y0 + (PREVIEW_H - preview_image->height) / 2;
+        rdpq_set_mode_copy(false);
+        rdpq_tex_blit(preview_image, x, y, NULL);
+    }
+}
 
 static const char *hidden_root_paths[] = {
     "/menu.bin",
@@ -286,6 +434,7 @@ static bool load_directory (menu_t *menu) {
     int result;
     dir_t info;
 
+    preview_drop();                     // SC64SS: the entries change under it
     browser_list_free(menu);
     directory_entry_limit_exceeded = false;
 
@@ -536,6 +685,36 @@ static void set_grid_directory (menu_t *menu, void *arg) {
     menu->settings.grid_directory = strdup(strip_fs_prefix(path_get(menu->browser.directory)));
     settings_save(&menu->settings);
 }
+// SC64SS: Add to favorites from the file list, for a ROM; the footer says for two seconds what
+// it did (added at the end of the list, already there, or the list full)
+static char favorite_notice[64];
+static int favorite_notice_frames = 0;
+
+static void add_favorite (menu_t *menu, void *arg) {
+    (void) arg;
+    path_t *path = path_clone_push(menu->browser.directory, menu->browser.entry->name);
+    bookkeeping_favorite_result_t result = bookkeeping_favorite_add(&menu->bookkeeping, path, NULL, BOOKKEEPING_TYPE_ROM);
+    int position = bookkeeping_favorite_find(&menu->bookkeeping, path, NULL, BOOKKEEPING_TYPE_ROM) + 1;
+    path_free(path);
+    if (result == BOOKKEEPING_FAVORITE_FULL) {
+        snprintf(favorite_notice, sizeof(favorite_notice), "Favorites are full (%d)", FAVORITES_COUNT);
+    } else if (result == BOOKKEEPING_FAVORITE_PRESENT) {
+        snprintf(favorite_notice, sizeof(favorite_notice), "Already in favorites, number %d", position);
+    } else {
+        snprintf(favorite_notice, sizeof(favorite_notice), "Added to favorites, number %d", position);
+    }
+    favorite_notice_frames = 120;
+}
+
+static component_context_menu_t rom_context_menu = {
+    .list = {
+        { .text = "Show entry properties", .action = show_properties },
+        { .text = "Add to favorites", .action = add_favorite },
+        { .text = "Delete selected entry", .action = delete_entry },
+        { .text = "Set current directory as default", .action = set_default_directory },
+        COMPONENT_CONTEXT_MENU_LIST_END,
+    }
+};
 
 static component_context_menu_t entry_context_menu = {
     .list = {
@@ -558,8 +737,19 @@ static component_context_menu_t archive_context_menu = {
     }
 };
 
+// the R menu for the selected entry: an archive's, a ROM's (SC64SS: with Add to favorites) or any other file's
+static component_context_menu_t *entry_context_menu_get (menu_t *menu) {
+    if (menu->browser.archive) {
+        return &archive_context_menu;
+    }
+    if (menu->browser.entry && (menu->browser.entry->type == ENTRY_TYPE_ROM)) {
+        return &rom_context_menu;
+    }
+    return &entry_context_menu;
+}
+
 static void process (menu_t *menu) {
-    if (ui_components_context_menu_process(menu, menu->browser.archive ? &archive_context_menu : &entry_context_menu)) {
+    if (ui_components_context_menu_process(menu, entry_context_menu_get(menu))) {
         return;
     }
 
@@ -668,7 +858,7 @@ static void process (menu_t *menu) {
         }
         sound_play_effect(SFX_EXIT);
     } else if (menu->actions.context && menu->browser.entry) {
-        ui_components_context_menu_show(menu->browser.archive ? &archive_context_menu : &entry_context_menu);
+        ui_components_context_menu_show(entry_context_menu_get(menu));
         sound_play_effect(SFX_SETTING);
     } else if (menu->actions.tab_right) {
         menu->next_mode = MENU_MODE_HISTORY;
@@ -677,6 +867,8 @@ static void process (menu_t *menu) {
         menu->next_mode = menu->grid_enabled ? MENU_MODE_GRID : MENU_MODE_SETTINGS;
         sound_play_effect(SFX_CURSOR);
     }
+
+    preview_follow(menu);               // SC64SS
 }
 
 static void draw (menu_t *menu, surface_t *d) {
@@ -688,7 +880,9 @@ static void draw (menu_t *menu, surface_t *d) {
 
     ui_components_layout_draw_tabbed();
 
+    ui_components_file_list_set_width(preview_slot ? PREVIEW_LIST_W : 0);   // SC64SS
     ui_components_file_list_draw(menu->browser.list, menu->browser.entries, menu->browser.selected);
+    preview_draw();                                                          // SC64SS
 
     const char *action = NULL;
 
@@ -722,7 +916,16 @@ static void draw (menu_t *menu, surface_t *d) {
         menu->browser.entries == 0 ? STL_GRAY : STL_DEFAULT
     );
 
-    if (menu->current_time >= 0) {
+    if (favorite_notice_frames > 0) {
+        favorite_notice_frames--;
+        ui_components_actions_bar_text_draw(
+            STL_DEFAULT,
+            ALIGN_CENTER, VALIGN_TOP,
+            "%s\n"
+            "\n",
+            favorite_notice
+        );
+    } else if (menu->current_time >= 0) {
         ui_components_actions_bar_text_draw(
             STL_DEFAULT,
             ALIGN_CENTER, VALIGN_TOP,
@@ -739,7 +942,7 @@ static void draw (menu_t *menu, surface_t *d) {
         );
     }
 
-    ui_components_context_menu_draw(menu->browser.archive ? &archive_context_menu : &entry_context_menu);
+    ui_components_context_menu_draw(entry_context_menu_get(menu));
 
     rdpq_detach_show();
 }
@@ -751,6 +954,7 @@ void view_browser_init (menu_t *menu) {
         if (!menu->grid_enabled) {
             entry_context_menu.row_count--;
         }
+        ui_components_context_menu_init(&rom_context_menu);
         ui_components_context_menu_init(&archive_context_menu);
         if (load_directory(menu)) {
             path_free(menu->browser.directory);
@@ -798,4 +1002,8 @@ void view_browser_display (menu_t *menu, surface_t *display) {
     process(menu);
 
     draw(menu, display);
+
+    if (menu->next_mode != MENU_MODE_BROWSER) {
+        preview_drop();                 // SC64SS: the decoder is free for the next view (the image viewer)
+    }
 }

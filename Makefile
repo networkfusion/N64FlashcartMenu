@@ -26,12 +26,16 @@ N64_ROM_EXPANSIONPAK = recommended
 # If you want to enable fast rebooting, comment out the following line.
 FLAGS ?= -DFEATURE_AUTOLOAD_ROM_ENABLED
 
+# SC64SS: ROM autoload compiled in, as on upstream's develop branch; the Fast Reboot setting goes with it
+FLAGS ?= -DFEATURE_AUTOLOAD_ROM_ENABLED
+
 N64_CFLAGS += -iquote $(SOURCE_DIR) -iquote $(ASSETS_DIR) -I $(SOURCE_DIR)/libs -isystem $(SOURCE_DIR)/libs/miniz -flto=auto $(FLAGS)
 
 SRCS = \
 	main.c \
 	boot/boot.c \
 	boot/cheats.c \
+	boot/hook_blob.c \
 	boot/cic.c \
 	boot/reboot.S \
 	flashcart/64drive/64drive_ll.c \
@@ -95,6 +99,8 @@ SRCS = \
 	menu/views/load_disk.c \
 	menu/views/load_emulator.c \
 	menu/views/load_rom.c \
+	menu/views/hotkeys.c \
+	menu/views/virtual_pak.c \
 	menu/views/music_player.c \
 	menu/views/startup.c \
 	menu/views/system_info.c \
@@ -184,6 +190,8 @@ $(BUILD_DIR)/$(PROJECT_NAME).dfs: $(FILESYSTEM)
 
 $(BUILD_DIR)/menu/views/credits.o: .FORCE
 $(BUILD_DIR)/menu/views/credits.o: FLAGS+=-DMENU_VERSION=\"$(MENU_VERSION)\" -DBUILD_TIMESTAMP=\"$(BUILD_TIMESTAMP)\"
+# SC64SS: the save states release and the base version for the Menu information screen, when the version carries them (a build without the -ss suffix, CI's, gets the screen's own fallback)
+$(BUILD_DIR)/menu/views/credits.o: FLAGS+=$(if $(findstring -ss,$(MENU_VERSION)),-DSC64SS_RELEASE=\"$(lastword $(subst -ss, ,$(MENU_VERSION)))\" -DSC64SS_BASE=\"$(firstword $(subst -ss, ,$(MENU_VERSION)))\",)
 
 $(BUILD_DIR)/$(PROJECT_NAME).elf: $(OBJS)
 

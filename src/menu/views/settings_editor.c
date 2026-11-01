@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "../sound.h"
@@ -36,6 +37,8 @@ enum {
     SETTING_CLEAR_AUTOLOAD  = (1 << 6), /**< Disable autoload and clear its target. */
     SETTING_CLEAR_GRID_CACHE = (1 << 7), /**< Delete the Grid index. */
     SETTING_GRID            = (1 << 8), /**< Hidden when Grid is disabled. */
+    SETTING_OPEN_HOTKEYS    = (1 << 9), /**< Open the global save-state hotkeys view. */
+    SETTING_RESET_BUTTON    = (1 << 10), /**< Clear the reset target when disabling. */
 };
 
 typedef const char *(*setting_value_fn)(menu_t *menu);
@@ -70,6 +73,15 @@ static const char *format_boot_view (menu_t *menu) {
 
 static const char *format_reset_action (menu_t *menu) {
     return "A: Reset";
+}
+
+static const char *format_reset_button (menu_t *menu) {
+    return menu->settings.reset_restarts_rom ? "Restart game" : "Menu";
+}
+
+static const char *format_hotkeys (menu_t *menu) {
+    (void) menu;
+    return "A: Configure";
 }
 
 /** @brief Read only: set from the Files context menu. */
@@ -115,6 +127,8 @@ static const setting_descriptor_t settings[] = {
     BOOL_SETTING("Show Cheat Files", show_cheat_files, SETTING_RELOAD_BROWSER),
     BOOL_SETTING("PAL60 Mode", pal60_enabled, SETTING_CONFIRM_PAL60),
     BOOL_SETTING("Wrap File List", wrap_file_list_scrolling, 0),
+    { "Reset Button", format_reset_button, offsetof(settings_t, reset_restarts_rom), SETTING_RESET_BUTTON },
+    { "Save State Hotkeys", format_hotkeys, NO_BOOL_OFFSET, SETTING_OPEN_HOTKEYS },
 #ifdef FEATURE_AUTOLOAD_ROM_ENABLED
     { "Autoload ROM", format_autoload, NO_BOOL_OFFSET, SETTING_CLEAR_AUTOLOAD },
     BOOL_SETTING("ROM Loading Bar", loading_progress_bar_enabled, 0),
@@ -190,6 +204,12 @@ static void setting_activate (menu_t *menu) {
     const setting_descriptor_t *setting = &settings[selected_row];
     bool *value;
 
+    if (setting->flags & SETTING_OPEN_HOTKEYS) {
+        menu->hotkeys_for_rom = false;
+        menu->next_mode = MENU_MODE_HOTKEYS;
+        return;
+    }
+
     if (setting->flags & SETTING_CONFIRM_RESET) {
         show_reset_confirm_message = true;
         return;
@@ -236,6 +256,11 @@ static void setting_activate (menu_t *menu) {
     }
 
     *value = !*value;
+
+    if ((setting->flags & SETTING_RESET_BUTTON) && !*value) {
+        free(menu->settings.reset_rom_path);
+        menu->settings.reset_rom_path = strdup("");
+    }
 
     if (setting->flags & SETTING_RELOAD_BROWSER) {
         menu->browser.reload = true;

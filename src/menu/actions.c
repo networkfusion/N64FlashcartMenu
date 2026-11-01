@@ -22,6 +22,7 @@ static void actions_clear (menu_t *menu) {
     menu->actions.options = false;
     menu->actions.settings = false;
     menu->actions.context = false;
+    menu->actions.lz_context = false;
     menu->actions.tab_left = false;
     menu->actions.tab_right = false;
 }
@@ -93,6 +94,14 @@ static void actions_update_direction (menu_t *menu) {
 
 static void actions_update_buttons (menu_t *menu) {    
     joypad_buttons_t pressed = {0};
+
+    JOYPAD_PORT_FOREACH (i) {
+        joypad_buttons_t held = joypad_get_buttons_held(i);
+        if (held.l && held.z) {
+            menu->actions.lz_context = true;
+            return;
+        }
+    }
 
     JOYPAD_PORT_FOREACH (i) {
         pressed = joypad_get_buttons_pressed(i);
