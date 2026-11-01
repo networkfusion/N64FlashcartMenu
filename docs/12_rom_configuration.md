@@ -13,6 +13,7 @@ The N64FlashcartMenu allows overriding the ROM's database through the Rom Info m
 ### Homebrew Header
 The N64FlashcartMenu fully supports the [homebrew header](https://n64brew.dev/wiki/ROM_Header#Advanced_Homebrew_ROM_Header)
 ROM's that use this do not need to be in the internal database and are automatically setup using its suggested settings.
+For Advanced Homebrew ROM Headers, the menu reads the Expansion Pak and region-free settings from the header. The ROM information screen shows the Expansion Pak setting and includes region-free status with the TV region; an explicit PAL, NTSC, or MPAL override remains visible.
 
 ### Available Manual Overrides
 Overrides will be stored in a file `<rom name>.ini` adjacent to the ROM.
